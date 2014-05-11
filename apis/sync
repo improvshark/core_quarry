@@ -157,10 +157,10 @@ end
 local recentMes ={}
 
 
-function broadcast(messageArg,nameArg, protocal)
+function broadcast(messageArg,nameArg, protocol)
 	checkModem(protocol)
 	bmessage = {message = messageArg, name = nameArg, stamp = newStamp() }
-	table.instert(recentMes,bmessage)
+	table.insert(recentMes,bmessage)
 	rednet.broadcast(textutils.serialize(bmessage),protocol)
 end
 
@@ -184,6 +184,7 @@ function listen(protocol)
 
 
 	if not recievedAgain then
+		table.insert(recentMes,rec)
 		rednet.broadcast(message,protocol)
 		return rec 
 	end
