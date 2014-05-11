@@ -1,11 +1,13 @@
 
 
+fadeDays = 0
+fadeTime = .1
+
 channel = 1337
-protocol = 'quarry'
 --
 
 
-messages ={}
+
 
 local function copy (t) -- shallow-copy a table
     if type(t) ~= "table" then return t end
@@ -133,7 +135,7 @@ local function getModem()
 	return false
 end
 
-local function checkModem()
+local function checkModem(protocol)
 	modem , side = getModem()
 	if modem == false then
 		print('no modem found!')
@@ -150,16 +152,41 @@ local function checkModem()
 end
 
 
+
+
+local recentMes ={}
+
+
 function broadcast(messageArg,nameArg, protocal)
-	checkModem()
+	checkModem(protocol)
 	bmessage = {message = messageArg, name = nameArg, stamp = newStamp() }
+	table.instert(recentMes,bmessage)
 	rednet.broadcast(textutils.serialize(bmessage),protocol)
 end
 
 
-function listen()
-	checkModem()
+function listen(protocol)
+	checkModem(protocol)
 	local senderId, message, distance = rednet.receive(protocol)
-	return textutils.unserialize(message)
+	recievedAgain = false
+	rec = textutils.unserialize(message)
+	for i = 1, #recentMes do
+		if recentMes[i].name == rec.name then
+			recievedAgain = true
+		end
+
+		if os.day() - recentMes[i].stamp.day > fadeDays then
+			table.remove(recentMes,i)
+		elseif os.day() - recentMes[i].stamp.day == fadeDays and os.time() - recentMes[i].stamp.time > fadeTime then
+			table.remove(recentMes,i)
+		end
+	end
+
+
+	if not recievedAgain then
+		rednet.broadcast(message,protocol)
+		return rec 
+	end
+	return listen(protocol)
 
 end
