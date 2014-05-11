@@ -1,0 +1,40 @@
+-- check for gitget if dont have download gitget
+
+if fs.exists("gitget") == false then
+	shell.run('pastebin', 'get', '6aMMzdwd', '/gitget') 
+end
+
+
+shell.run('/gitget', 'improvshark', 'core', 'master', '/core')
+
+
+if fs.exists("/startup") then
+	fs.delete("/startup")
+end
+
+shell.run('pastebin', 'get', 'F0HtmrGY', '/startup') 
+
+shell.run('mkdir', '/user') 
+shell.run('mkdir', '/user/apis') 
+
+shell.run('mkdir', '/user/programs') 
+
+fs.delete("/gitget")
+fs.delete("/json")
+
+fs.delete("/installer")
+
+
+
+print("loading core programs")
+shell.setPath(shell.path() .. ':/core/system/core_programs')
+
+print("loading core apis")
+if shell.run('api', 'load','/core/system/core_apis') == false then 
+	print("failed to load apis")
+end
+
+shell.run("module", 'install', 'quarry')
+shell.run("module", 'boot', 'quarry')
+shell.run("module", 'install', 'turtleTools')
+shell.run("module", 'boot', 'turtleTools')

@@ -1,0 +1,16 @@
+
+
+sides = {'right', 'left', 'top', 'bottom', 'front', 'back'}
+for i = 1, #sides do
+	if peripheral.getType(sides[i]) == 'drive' then
+		disk.setLabel(sides[i], 'installer')
+	end	-- Code here...
+end
+
+
+
+if fs.exists("/disk/startup") then
+	fs.delete("/disk/startup")
+end
+shell.run('cp', core.coreDir() .. '/modules/quarry/files/installer', '/disk/startup')
+
