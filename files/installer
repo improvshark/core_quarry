@@ -34,7 +34,10 @@ if shell.run('api', 'load','/core/system/core_apis') == false then
 	print("failed to load apis")
 end
 
-shell.run("module", 'install', 'quarry')
-shell.run("module", 'boot', 'quarry')
+
 shell.run("module", 'install', 'turtleTools')
 shell.run("module", 'boot', 'turtleTools')
+
+
+shell.run("module", 'install', 'quarry')
+shell.run("module", 'boot', 'quarry')

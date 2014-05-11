@@ -1,0 +1,165 @@
+
+
+channel = 1337
+protocol = 'quarry'
+--
+
+
+messages ={}
+
+local function copy (t) -- shallow-copy a table
+    if type(t) ~= "table" then return t end
+    local meta = getmetatable(t)
+    local target = {}
+    for k, v in pairs(t) do target[k] = v end
+    setmetatable(target, meta)
+    return target
+end
+
+function newStamp()
+	return {day = os.day(), time = os.time()}
+end
+
+
+function fieldExists(tabl, field)
+	if tabl.items == nil then return false end
+	for i = 1, #tabl.items do
+		if field == tabl.items[i].name then
+			return true, i
+		end
+	end
+	return false
+end
+
+function create()
+	return { stamp = newStamp(), items = {}}
+end
+
+function set(tabl,field,val)
+	fExists , pos = fieldExists(tabl,field)
+	if fExists then
+		tabl.items[pos].value = val
+		tabl.items[pos].stamp = newStamp() 
+	else
+		obj = {value = val, name = field, stamp = newStamp()   }
+		table.insert(tabl.items, obj)
+	end
+	tabl.stamp = newStamp() 
+end
+
+function get(tabl,field)
+	for i = 1, #tabl.items do
+		if field == tabl.items[i].name then
+			return tabl.items[i].value
+		end
+	end
+	return nil
+end
+
+function getAll(tabl)
+	temp = {}
+	for i = 1, #tabl.items do
+		table.insert(temp, i, {name = tabl.items[i].name, value = tabl.items[i].value})
+	end
+	return temp
+end
+
+
+
+local function copyObj(a,b)
+	b.name = a.name 
+	b.value = a.value
+	b.stamp = a.stamp
+end
+
+local function syncObj(a,b)
+	newObj = {}
+	if tonumber(a.stamp.day) > tonumber(b.stamp.day) then
+		copyObj(a,newObj)
+	elseif tonumber(a.stamp.day) < tonumber(b.stamp.day) then
+		copyObj(b,newObj)
+	elseif tonumber(a.stamp.day) == tonumber(b.stamp.day) then
+
+		if tonumber(a.stamp.time) > tonumber(b.stamp.time) then
+			copyObj(a,newObj)
+		elseif tonumber(a.stamp.time) < tonumber(b.stamp.time) then
+			copyObj(b,newObj)
+		elseif tonumber(a.stamp.time) == tonumber(b.stamp.time) then
+			copyObj(a,newObj)
+		end
+	end
+
+	return newObj
+end
+
+function sync(a,b)
+	bCopy = copy(b)
+	newSync = create()
+	for i = 1, #a.items do
+		fexists , pos = fieldExists(bCopy,a.items[i].name)
+
+		if fexists then
+			print('exists sync: ' .. textutils.serialize( syncObj(a.items[i], bCopy.items[pos]) )  )
+			print('tableToInserto: ' .. textutils.serialize( newSync.items  ))
+			table.insert(newSync.items, syncObj(a.items[i], bCopy.items[pos]) )
+			table.remove(bCopy.items, pos)
+		else
+			print('no exist insert: ' .. textutils.serialize(a.items[i]) )
+			table.insert(newSync.items,a.items[i])
+		end
+	end
+
+	for i = 1, #bCopy.items do
+		table.insert(newSync.items,bCopy.items[i])
+	end
+	return newSync
+end
+
+function getStamp(tabl)
+	return tabl.stamp
+end
+
+
+
+
+
+local function getModem()
+	sides = {"front", "back", "left", "right", "top","bottom"}
+	for i = 1, #sides do
+		if peripheral.isPresent(sides[i])==true and tostring(peripheral.getType(sides[i])) == 'modem' then
+			return peripheral.wrap(sides[i]), sides[i]
+		end
+	end
+	return false
+end
+
+local function checkModem()
+	modem , side = getModem()
+	if modem == false then
+		print('no modem found!')
+		return
+	else
+		if not modem.isOpen then
+			modem.open(channel)
+		end
+		if not rednet.isOpen(side) then
+			rednet.open(side)
+		end
+		rednet.host(protocol, os.getComputerLabel())
+	end
+end
+
+
+function broadcast(messageArg,nameArg, protocal)
+	checkModem()
+	bmessage = {message = messageArg, name = nameArg, stamp = newStamp() }
+	rednet.broadcast(textutils.serialize(bmessage),protocol)
+end
+
+
+function listen()
+	checkModem()
+	local senderId, message, distance = rednet.receive(protocol)
+	return textutils.unserialize(message)
+
+end
