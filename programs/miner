@@ -1,0 +1,64 @@
+
+local proto = nil
+local configDir = core.coreDir() .. '/modules/quarry/files/config'
+local config = configman.load(configDir)
+if config == nil then
+	config = {unit = 'none', list={}}
+	configman.save(configDir,config)
+end
+
+
+local function saveList()
+	configman.save(configDir,config)
+end
+
+local function startJob()
+	for i = 1, #config.list do
+		if config.list[i].status == 'notStarted' then
+			-- check fuel here
+			nav.gotoPos(config.list[i].startCoord, true)
+			currentPos = pos.getPosition()
+			shell.run('ex', config.list[i].holeSize.x,config.list[i].holeSize.y,config.list[i].holeSize.z)
+			-- check fuel here
+			nav.gotoPos(currentPos, true)
+			config.list[i].status = "done"
+			saveList()
+			return true
+		end
+	end
+	return false
+end
+
+
+
+local function miningLoop()
+	while startJob() do
+		tcom.syncB(config.list, proto)
+	end
+end
+
+
+local arg = {...}
+
+local function main()
+
+	if arg[1] == 'start' then
+		print('starting '.. arg[2].. ' quarry')
+		proto= arg[2]
+		parallel.waitForAny(function() 	tcom.syncLoop(proto) end,function() tcom.listenLoop(proto,config.list) end, miningLoop)
+
+	elseif arg[1] == 'join' and arg[2] ~= nil and arg[3] == nil then
+		print('joining '.. arg[2])
+		-- sync list
+		-- get job
+		-- start job
+
+		config.list = arg[3]
+		saveList()
+		parallel.waitForAny(function() 	tcom.syncloop(proto) end,function() tcom.listenLoop(proto,config.list) end, miningLoop)
+	
+	end
+
+end
+
+main()

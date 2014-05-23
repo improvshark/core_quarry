@@ -1,73 +1,71 @@
  
 
-configDir = core.coreDir() .. '/modules/quarry/files/config'
+local configDir = core.coreDir() .. '/modules/quarry/files/config'
 
 
-config = configman.load(configDir)
+local config = configman.load(configDir)
 if config == nil then
 	config = {unit = 'none', list={}}
 	configman.save(configDir,config)
 end
 
 
-function createJob(t, holeSizeArg,coordArg)  
+local function createJob(t, holeSizeArg,coordArg)  
 	job =  {holeSize = holeSizeArg, startCoord = coordArg, status = 'notStarted', percent = 0 }
 	table.insert(t,job)
 end
 
-function generateCoords(holeSizeArg, startCoordArg, endCoordArg)
+local function generateCoords(holeSizeArg, startCoordArg, endCoordArg)
 	jobs = {}
+	print('sc '.. startCoordArg.x..' '..startCoordArg.y.." "..startCoordArg.z)
+	print('ec '.. endCoordArg.x..' '..endCoordArg.y.." "..endCoordArg.z)
 
-	 
-	
-	width = math.abs(startCoordArg.x - endCoordArg.x)
-	depth = math.abs(startCoordArg.y - endCoordArg.y)
-	length = math.abs(startCoordArg.z - endCoordArg.z)
+	width = math.abs(startCoordArg.x - endCoordArg.x) + 1 
+	depth = math.abs(startCoordArg.y - endCoordArg.y) + 1
+	length = math.abs(startCoordArg.z - endCoordArg.z) + 1
 		
+	for i = 0, math.ceil(length/holeSizeArg.z)-1  do
+		
+		for j = 0, math.ceil(width/holeSizeArg.x)-1 do
 
-
-
-	y = startCoordArg.y
-
-	clength = length
-	for i = 1, length/holeSizeArg.z  do
-		clength = clength - holeSizeArg.z
-		cwidth = width
-		for j = 1, width/holeSizeArg.x do
-
-			cwidth = cwidth - holeSizeArg.x 
+			
 
 			if startCoordArg.x >= endCoordArg.x then
 				if startCoordArg.z >= endCoordArg.z then
-					x = startCoordArg.x - holeSizeArg.x*i
-					z = startCoordArg.z - holeSizeArg.z*i
+					x = startCoordArg.x - (holeSizeArg.x*j)
+					z = startCoordArg.z - (holeSizeArg.z*i)
 					f=1
 				else
-					x = startCoordArg.x - holeSizeArg.x*i
-					z = startCoordArg.z + holeSizeArg.z*i
+					x = startCoordArg.x - (holeSizeArg.x*j)
+					z = startCoordArg.z + (holeSizeArg.z*i)
 					f=0
 				end
 			else
 				if startCoordArg.z >=endCoordArg.z then
-					x = startCoordArg.x + holeSizeArg.x*i
-					z = startCoordArg.z - holeSizeArg.z*i
+					x = startCoordArg.x + (holeSizeArg.x*j)
+					z = startCoordArg.z - (holeSizeArg.z*i)
 					f=2
 				else
-					x = startCoordArg.x + holeSizeArg.x*i
-					z = startCoordArg.z + holeSizeArg.z*i
+					x = startCoordArg.x + (holeSizeArg.x*j)
+					z = startCoordArg.z + (holeSizeArg.z*i)
 					f=3
 				end
 			end
 
-			hs = vector.new( math.min(holeSizeArg.x,cwidth), depth, math.min(holeSizeArg.z,clength))
-			createJob(hs,{direction = f, Coord = vector.new(x,y,z) })
+			hx = math.min(holeSizeArg.x,width - holeSizeArg.x*j)
+			hz = math.min(holeSizeArg.z,length - holeSizeArg.z*i )
 
+			hs = vector.new( hx, depth,hz )
+			createJob(jobs,hs,{direction = f, coord = vector.new(x,startCoordArg.y,z) })
+			print(i..j ..": "..x.." "..startCoordArg.y.." "..z.." "..f)
+			--print("   ".. hs.x.." "..hs.y.." "..hs.z)
 
 		end
 	end
+	return jobs
 end
 
-function getNumber(s)
+local function getNumber(s)
 	term.write('\t\t'..s..':')
 	input = io.read()
 	while tonumber(input) == nil do
@@ -76,56 +74,88 @@ function getNumber(s)
 	end
 	return input
 end
-function getHoleSize()
+local function getHoleSize()
 	coord = vector.new(0, 0, 0)
 	coord.x = getNumber('Width')
 	coord.z = getNumber('Length')
+	return coord
 end
 
-function getCoord()
+local function getCoord()
 	coord = vector.new(0, 0, 0)
 	coord.x = getNumber('x')
 	coord.y = getNumber('y')
 	coord.z = getNumber('z')
+	return coord
 end
 
-function join(name, list)
+local function join(name)
 	if config.unit == 'miner' or config.unit == 'runner' then
-		shell.run(config.unit,'join', name, list)
+		shell.run(config.unit,'join', name)
 	else
 		print('must set unit type')
 	end
 end
 
-arg = {...}
-
-
-if arg[1] == 'start' and arg[2] ~= nil then
-	print('holeSize?')
-	holeSize = getHoleSize()
-	print('start Coordinate ?')
-	startCoord = getCoord()
-	print('end Coordinate ?')
-	endCoord = getCoord()
-
-	list = generateCoords(holeSize,startCoord,endCoord)
-	join(arg[2], list)
-
-elseif arg[1] == 'stop' and arg[2] ~= nil then
-elseif arg[1] == 'pause' and arg[2] ~= nil then
-elseif arg[1] == 'status' and arg[2] ~= nil then
-elseif arg[1] == 'add' and arg[2] ~= nil then
-
-elseif arg[1] == 'join' and arg[2] ~= nil then
-	join(arg[2])
-elseif arg[1] == 'set' and arg[2] == 'miner' then 
-	config.unit = 'miner'
-	configman.save(configDir,config)
-elseif arg[1] == 'set' and arg[2] == 'runner' then
-	config.unit = 'runner'
-	configman.save(configDir,config)
-elseif arg[1] == 'set' and arg[2] == 'none' then
-	config.unit = 'none'
-	configman.save(configDir,config)
-
+local function start(name)
+	if config.unit == 'miner' or config.unit == 'runner' then
+		shell.run(config.unit,'start', name)
+	else
+		print('must set unit type')
+	end
 end
+
+local arg = {...}
+
+
+local function main()
+
+
+
+	if arg[1] == 'start' and arg[2] ~= nil 
+	 and tonumber(arg[3]) ~= nil and tonumber(arg[4]) ~= nil
+	 and tonumber(arg[5]) ~= nil and tonumber(arg[6]) ~= nil and tonumber(arg[7]) ~= nil
+	 and tonumber(arg[8]) ~= nil and tonumber(arg[9]) ~= nil and tonumber(arg[10]) ~= nil then
+
+	 	holeSize = vector.new(tonumber(arg[3]),0,tonumber(arg[4]))
+	 	startCoord = vector.new(tonumber(arg[5]),tonumber(arg[6]),tonumber(arg[7]))
+	 	endCoord = vector.new(tonumber(arg[8]),tonumber(arg[9]),tonumber(arg[10]))
+		config.list = generateCoords(holeSize,startCoord,endCoord)
+		configman.save(configDir,config)
+		start(arg[2])
+
+
+	elseif arg[1] == 'start' and arg[2] ~= nil then
+		print('holeSize?')
+		holeSize = getHoleSize()
+		print('start Coordinate ?')
+		startCoord = getCoord()
+		print('end Coordinate ?')
+		endCoord = getCoord()
+
+		list = generateCoords(holeSize,startCoord,endCoord)
+		configman.save(configDir,config)
+		join(arg[2])
+
+	elseif arg[1] == 'stop' and arg[2] ~= nil then
+	elseif arg[1] == 'pause' and arg[2] ~= nil then
+	elseif arg[1] == 'status' and arg[2] ~= nil then
+	elseif arg[1] == 'add' and arg[2] ~= nil then
+
+	elseif arg[1] == 'join' and arg[2] ~= nil then
+		join(arg[2])
+	elseif arg[1] == 'set' and arg[2] == 'miner' then 
+		config.unit = 'miner'
+		configman.save(configDir,config)
+	elseif arg[1] == 'set' and arg[2] == 'runner' then
+		config.unit = 'runner'
+		configman.save(configDir,config)
+	elseif arg[1] == 'set' and arg[2] == 'none' then
+		config.unit = 'none'
+		configman.save(configDir,config)
+	else
+		print('unknown command')
+	end
+end
+
+main()

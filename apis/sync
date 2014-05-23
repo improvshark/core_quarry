@@ -165,7 +165,7 @@ function broadcast(messageArg,nameArg, protocol)
 end
 
 
-function listen(protocol)
+function listenB(protocol)
 	checkModem(protocol)
 	local senderId, message, distance = rednet.receive(protocol)
 	recievedAgain = false
@@ -190,4 +190,10 @@ function listen(protocol)
 	end
 	return listen(protocol)
 
+end
+
+function listen(protocol)
+	checkModem(protocol)
+	local senderId, message, distance = rednet.receive(protocol)
+	return textutils.unserialize(message)
 end

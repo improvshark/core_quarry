@@ -1,0 +1,38 @@
+function syncRequest(protocol)
+	message = {messageType= 'syncRequest'}
+	sync.broadcast(message,tostring(message), protocol)
+end
+
+function syncB(listArg, protocol)
+	message = {list = listArg, messageType= 'sync'}
+	sync.broadcast(message,tostring(message), protocol)
+end
+
+
+
+
+
+function syncLoop(protocol)
+	while true do
+
+		message = sync.listenB(protocol)
+
+	end
+end
+
+
+function listenLoop(protocol, list)
+	while true do
+		message = sync.listen('quarry')
+
+
+		if message.messageType == 'syncRequest' then
+			sync.broadcast(message,tostring(message), protocol)
+		elseif message.messageType == 'list' then
+		elseif message.messageType == 'status' then
+		end
+
+
+
+	end
+end
