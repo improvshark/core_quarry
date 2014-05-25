@@ -7,7 +7,6 @@ if config == nil then
 	configman.save(configDir,config)
 end
 
-
 local function saveList()
 	configman.save(configDir,config)
 end
@@ -55,12 +54,10 @@ local function main()
 
 	elseif arg[1] == 'join' and arg[2] ~= nil then
 		print('joining '.. arg[2])
-		-- sync list
-		-- get job
-		-- start job
 
-		config.list = arg[3]
+		config.list = tcom.syncRequest(arg[2])
 		saveList()
+		
 		parallel.waitForAny(function() tcom.syncloop(proto) end,function() tcom.listenLoop(proto,config.list) end, miningLoop)
 	
 	end

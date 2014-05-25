@@ -1,6 +1,19 @@
-function syncRequest(protocol)
-	message = {messageType= 'syncRequest'}
-	sync.broadcast(message,tostring(message), protocol)
+local listenProtocol = 'quarry'
+
+
+function syncRequest(qName)
+	message = {messageType= 'syncRequest', quarryName = qName}
+	sync.broadcast(message,tostring(message), listenProtocol)
+
+	received = sync.listen(qName)
+
+	print(textutils.unserialize(received.message))
+	print (received.message.messageType)
+	while received.message.messageType != 'sync' do
+		received = sync.listen(qName)
+	end
+
+	return received.message.list
 end
 
 function syncB(listArg, protocol)
@@ -9,25 +22,25 @@ function syncB(listArg, protocol)
 end
 
 
-
-
-
 function syncLoop(protocol)
 	while true do
-
 		message = sync.listenB(protocol)
+		
+		if message.messageType == 'sync' then
 
+		end
 	end
 end
 
 
 function listenLoop(protocol, list)
 	while true do
-		message = sync.listen('quarry')
-
+		message = sync.listen(listenProtocol)
 
 		if message.messageType == 'syncRequest' then
-			sync.broadcast(message,tostring(message), protocol)
+			if message.quarryName == protocol then
+				syncB(list,protocol)
+			end
 		elseif message.messageType == 'list' then
 		elseif message.messageType == 'status' then
 		end

@@ -1,13 +1,8 @@
 
-
 fadeDays = 0
 fadeTime = .1
 
 channel = 1337
---
-
-
-
 
 local function copy (t) -- shallow-copy a table
     if type(t) ~= "table" then return t end
@@ -121,10 +116,6 @@ function getStamp(tabl)
 	return tabl.stamp
 end
 
-
-
-
-
 local function getModem()
 	sides = {"front", "back", "left", "right", "top","bottom"}
 	for i = 1, #sides do
@@ -151,11 +142,7 @@ local function checkModem(protocol)
 	end
 end
 
-
-
-
 local recentMes ={}
-
 
 function broadcast(messageArg,nameArg, protocol)
 	checkModem(protocol)
@@ -164,12 +151,13 @@ function broadcast(messageArg,nameArg, protocol)
 	rednet.broadcast(textutils.serialize(bmessage),protocol)
 end
 
-
 function listenB(protocol)
 	checkModem(protocol)
 	local senderId, message, distance = rednet.receive(protocol)
 	recievedAgain = false
 	rec = textutils.unserialize(message)
+	rec.senderId = senderId
+
 	for i = 1, #recentMes do
 		if recentMes[i].name == rec.name then
 			recievedAgain = true
@@ -188,7 +176,7 @@ function listenB(protocol)
 		rednet.broadcast(message,protocol)
 		return rec
 	end
-	return listen(protocol)
+	return listenB(protocol)
 
 end
 
