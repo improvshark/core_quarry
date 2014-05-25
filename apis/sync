@@ -41,12 +41,12 @@ function set(tabl,field,val)
 	fExists , pos = fieldExists(tabl,field)
 	if fExists then
 		tabl.items[pos].value = val
-		tabl.items[pos].stamp = newStamp() 
+		tabl.items[pos].stamp = newStamp()
 	else
 		obj = {value = val, name = field, stamp = newStamp()   }
 		table.insert(tabl.items, obj)
 	end
-	tabl.stamp = newStamp() 
+	tabl.stamp = newStamp()
 end
 
 function get(tabl,field)
@@ -69,7 +69,7 @@ end
 
 
 local function copyObj(a,b)
-	b.name = a.name 
+	b.name = a.name
 	b.value = a.value
 	b.stamp = a.stamp
 end
@@ -186,7 +186,7 @@ function listenB(protocol)
 	if not recievedAgain then
 		table.insert(recentMes,rec)
 		rednet.broadcast(message,protocol)
-		return rec 
+		return rec
 	end
 	return listen(protocol)
 
@@ -195,5 +195,7 @@ end
 function listen(protocol)
 	checkModem(protocol)
 	local senderId, message, distance = rednet.receive(protocol)
-	return textutils.unserialize(message)
+	recieved = textutils.unserialize(message)
+	recieved.senderId = senderId
+	return recieved
 end

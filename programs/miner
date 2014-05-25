@@ -15,14 +15,22 @@ end
 local function startJob()
 	for i = 1, #config.list do
 		if config.list[i].status == 'notStarted' then
+			
+			config.list[i].status = 'started'
+			saveList()
+			tcom.syncB(config.list, proto)
+			
 			-- check fuel here
 			nav.gotoPos(config.list[i].startCoord, true)
 			currentPos = pos.getPosition()
 			shell.run('ex', config.list[i].holeSize.x,config.list[i].holeSize.y,config.list[i].holeSize.z)
 			-- check fuel here
 			nav.gotoPos(currentPos, true)
+			
 			config.list[i].status = "done"
 			saveList()
+			tcom.syncB(config.list, proto)
+			
 			return true
 		end
 	end
@@ -32,9 +40,7 @@ end
 
 
 local function miningLoop()
-	while startJob() do
-		tcom.syncB(config.list, proto)
-	end
+	while startJob() do end
 end
 
 
@@ -42,12 +48,12 @@ local arg = {...}
 
 local function main()
 
-	if arg[1] == 'start' then
+	if arg[1] == 'start' and arg[2] ~= nil then
 		print('starting '.. arg[2].. ' quarry')
 		proto= arg[2]
-		parallel.waitForAny(function() 	tcom.syncLoop(proto) end,function() tcom.listenLoop(proto,config.list) end, miningLoop)
+		parallel.waitForAny(function() tcom.syncLoop(proto) end,function() tcom.listenLoop(proto,config.list) end, miningLoop)
 
-	elseif arg[1] == 'join' and arg[2] ~= nil and arg[3] == nil then
+	elseif arg[1] == 'join' and arg[2] ~= nil then
 		print('joining '.. arg[2])
 		-- sync list
 		-- get job
@@ -55,7 +61,7 @@ local function main()
 
 		config.list = arg[3]
 		saveList()
-		parallel.waitForAny(function() 	tcom.syncloop(proto) end,function() tcom.listenLoop(proto,config.list) end, miningLoop)
+		parallel.waitForAny(function() tcom.syncloop(proto) end,function() tcom.listenLoop(proto,config.list) end, miningLoop)
 	
 	end
 
