@@ -4,6 +4,13 @@ fadeTime = .1
 
 channel = 1337
 
+
+local function save(var)
+	local configDir = core.coreDir() .. '/modules/quarry/files/log'
+	config = {log = var}
+	configman.save(configDir,config)
+end
+
 local function copy (t) -- shallow-copy a table
     if type(t) ~= "table" then return t end
     local meta = getmetatable(t)
@@ -96,12 +103,12 @@ function sync(a,b)
 		fexists , pos = fieldExists(bCopy,a.items[i].name)
 
 		if fexists then
-			print('exists sync: ' .. textutils.serialize( syncObj(a.items[i], bCopy.items[pos]) )  )
-			print('tableToInserto: ' .. textutils.serialize( newSync.items  ))
+			--print('exists sync: ' .. textutils.serialize( syncObj(a.items[i], bCopy.items[pos]) )  )
+			--print('tableToInserto: ' .. textutils.serialize( newSync.items  ))
 			table.insert(newSync.items, syncObj(a.items[i], bCopy.items[pos]) )
 			table.remove(bCopy.items, pos)
 		else
-			print('no exist insert: ' .. textutils.serialize(a.items[i]) )
+			--print('no exist insert: ' .. textutils.serialize(a.items[i]) )
 			table.insert(newSync.items,a.items[i])
 		end
 	end
@@ -159,19 +166,21 @@ function listenB(protocol)
 	rec.senderId = senderId
 
 	for i = 1, #recentMes do
-		if recentMes[i].name == rec.name then
-			recievedAgain = true
-		end
+		if recentMes[i] ~= nil then
+			if recentMes[i].name == rec.name then
+				recievedAgain = true
+			end
 
-		if os.day() - recentMes[i].stamp.day > fadeDays then
-			table.remove(recentMes,i)
-		elseif os.day() - recentMes[i].stamp.day == fadeDays and os.time() - recentMes[i].stamp.time > fadeTime then
-			table.remove(recentMes,i)
+			if os.day() - recentMes[i].stamp.day > fadeDays then
+				table.remove(recentMes,i)
+			elseif os.day() - recentMes[i].stamp.day == fadeDays and os.time() - recentMes[i].stamp.time > fadeTime then
+				table.remove(recentMes,i)
+			end
 		end
 	end
 
 
-	if not recievedAgain then
+	if not recievedAgain and recentMes ~= nil then
 		table.insert(recentMes,rec)
 		rednet.broadcast(message,protocol)
 		return rec
@@ -181,9 +190,30 @@ function listenB(protocol)
 end
 
 function listen(protocol)
-	checkModem(protocol)
+		checkModem(protocol)
 	local senderId, message, distance = rednet.receive(protocol)
-	recieved = textutils.unserialize(message)
-	recieved.senderId = senderId
-	return recieved
+	recievedAgain = false
+	rec = textutils.unserialize(message)
+	rec.senderId = senderId
+
+	for i = 1, #recentMes do
+		if recentMes[i] ~= nil then
+			if recentMes[i].name == rec.name then
+				recievedAgain = true
+			end
+
+			if os.day() - recentMes[i].stamp.day > fadeDays then
+				table.remove(recentMes,i)
+			elseif os.day() - recentMes[i].stamp.day == fadeDays and os.time() - recentMes[i].stamp.time > fadeTime then
+				table.remove(recentMes,i)
+			end
+		end
+	end
+
+
+	if not recievedAgain and recentMes ~= nil then
+		table.insert(recentMes,rec)
+		return rec
+	end
+	return listenB(protocol)
 end

@@ -1,9 +1,10 @@
 
 local proto = nil
+local listenProtocol = 'quarry'
 local configDir = core.coreDir() .. '/modules/quarry/files/config'
 local config = configman.load(configDir)
 if config == nil then
-	config = {unit = 'none', list={}}
+	config = {unit = 'none', list=sync.create()}
 	configman.save(configDir,config)
 end
 
@@ -12,21 +13,26 @@ local function saveList()
 end
 
 local function startJob()
-	for i = 1, #config.list do
-		if config.list[i].status == 'notStarted' then
+	jobList = sync.getAll(config.list)
+	for i = 1, #jobList do
+		if jobList[i].value.status == 'notStarted' then
 			
-			config.list[i].status = 'started'
+			value = jobList[i].value
+			value.status = 'started'
+			sync.set(config.list,jobList[i].name,value)
 			saveList()
 			tcom.syncB(config.list, proto)
 			
 			-- check fuel here
-			nav.gotoPos(config.list[i].startCoord, true)
+			nav.gotoPos(jobList[i].value.startCoord, true)
 			currentPos = pos.getPosition()
-			shell.run('ex', config.list[i].holeSize.x,config.list[i].holeSize.y,config.list[i].holeSize.z)
+			shell.run('ex', jobList[i].value.holeSize.x,jobList[i].value.holeSize.y,jobList[i].value.holeSize.z)
 			-- check fuel here
 			nav.gotoPos(currentPos, true)
 			
-			config.list[i].status = "done"
+			value = jobList[i].value
+			value.status = 'done'
+			sync.set(config.list,jobList[i].name,value)
 			saveList()
 			tcom.syncB(config.list, proto)
 			
@@ -42,6 +48,37 @@ local function miningLoop()
 	while startJob() do end
 end
 
+local function syncLoop()
+	while true do
+		message = sync.listenB(proto)
+		
+		if message.message.messageType == 'sync' then
+			print('syncing ' .. tostring(message.message.list))
+			a = message.message.list
+
+			config.list = sync.sync(a,config.list)
+
+		end
+	end
+end
+
+function listenLoop()
+	while true do
+		message = sync.listen(listenProtocol)
+
+		if message.message.messageType == 'syncRequest' then
+			print('got a syncRequest')
+			if message.message.quarryName == proto then
+				sleep(1)
+				print('broadcasting sync')
+				tcom.syncB(config.list, proto)
+			end
+		elseif message.messageType == 'list' then
+		elseif message.messageType == 'status' then
+		end
+	end
+end
+
 
 local arg = {...}
 
@@ -50,15 +87,20 @@ local function main()
 	if arg[1] == 'start' and arg[2] ~= nil then
 		print('starting '.. arg[2].. ' quarry')
 		proto= arg[2]
-		parallel.waitForAny(function() tcom.syncLoop(proto) end,function() tcom.listenLoop(proto,config.list) end, miningLoop)
+		local startPos = pos.getPosition()
+		parallel.waitForAny(syncLoop, listenLoop, miningLoop)
+		nav.gotoPos(startPos, true)
 
 	elseif arg[1] == 'join' and arg[2] ~= nil then
 		print('joining '.. arg[2])
-
+		proto= arg[2]
 		config.list = tcom.syncRequest(arg[2])
 		saveList()
-		
-		parallel.waitForAny(function() tcom.syncloop(proto) end,function() tcom.listenLoop(proto,config.list) end, miningLoop)
+
+
+		local startPos = pos.getPosition()
+		parallel.waitForAny(syncLoop, listenLoop, miningLoop)
+		nav.gotoPos(startPos, true)
 	
 	end
 

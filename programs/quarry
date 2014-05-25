@@ -12,11 +12,11 @@ end
 
 local function createJob(t, holeSizeArg,coordArg)  
 	job =  {holeSize = holeSizeArg, startCoord = coordArg, status = 'notStarted', percent = 0 }
-	table.insert(t,job)
+	sync.set(t,tostring(job),job)
 end
 
 local function generateCoords(holeSizeArg, startCoordArg, endCoordArg)
-	jobs = {}
+	jobs = sync.create()
 	print('sc '.. startCoordArg.x..' '..startCoordArg.y.." "..startCoordArg.z)
 	print('ec '.. endCoordArg.x..' '..endCoordArg.y.." "..endCoordArg.z)
 
