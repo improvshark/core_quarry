@@ -133,7 +133,7 @@ local function getModem()
 	return false
 end
 
-local function checkModem(protocol)
+function checkModem(protocol)
 	modem , side = getModem()
 	if modem == false then
 		print('no modem found!')
@@ -151,6 +151,16 @@ end
 
 local recentMes ={}
 
+function send(id, messageArg,nameArg,protocol)
+	if tonumber(id) == nil then
+		print('bad id!')
+	end
+	checkModem(protocol)
+	bmessage = {message = messageArg, name = nameArg, stamp = newStamp() }
+	table.insert(recentMes,bmessage)
+	rednet.send(tonumber(id),textutils.serialize(bmessage),protocol)
+end
+
 function broadcast(messageArg,nameArg, protocol)
 	checkModem(protocol)
 	bmessage = {message = messageArg, name = nameArg, stamp = newStamp() }
@@ -158,12 +168,18 @@ function broadcast(messageArg,nameArg, protocol)
 	rednet.broadcast(textutils.serialize(bmessage),protocol)
 end
 
-function listenB(protocol)
+function listenB(protocol, timeout)
 	checkModem(protocol)
-	local senderId, message, distance = rednet.receive(protocol)
+	local senderId, message, distance = rednet.receive(protocol,timeout)
+
+	if  message == nil then
+		return nil
+	end
 	recievedAgain = false
+
 	rec = textutils.unserialize(message)
 	rec.senderId = senderId
+
 
 	for i = 1, #recentMes do
 		if recentMes[i] ~= nil then
@@ -178,23 +194,46 @@ function listenB(protocol)
 			end
 		end
 	end
-
 
 	if not recievedAgain and recentMes ~= nil then
 		table.insert(recentMes,rec)
 		rednet.broadcast(message,protocol)
 		return rec
 	end
+
+
 	return listenB(protocol)
 
 end
 
-function listen(protocol)
+function fade(stamp, days, time)
+	if os.day() - stamp.day > days then
+		return true
+	elseif os.day() - stamp.day == days and os.time() - stamp.time > time then
+		return true
+	end
+	return false
+end
+
+function listen(protocol,timeout)
 		checkModem(protocol)
-	local senderId, message, distance = rednet.receive(protocol)
+	local senderId, message, distance = rednet.receive(protocol,timeout)
+
+	if  message == nil then
+		return nil
+	end
+
+	print('senderId')
+
 	recievedAgain = false
+	print('b')
+	
 	rec = textutils.unserialize(message)
+	print('k')
 	rec.senderId = senderId
+
+
+	print('1')
 
 	for i = 1, #recentMes do
 		if recentMes[i] ~= nil then
@@ -211,9 +250,15 @@ function listen(protocol)
 	end
 
 
+	print('2')
+
 	if not recievedAgain and recentMes ~= nil then
 		table.insert(recentMes,rec)
 		return rec
 	end
-	return listenB(protocol)
+
+
+	print('3')
+
+	return listen(protocol, timeout)
 end

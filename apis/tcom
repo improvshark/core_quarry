@@ -19,3 +19,52 @@ function syncB(listArg, protocol)
 end
 
 
+function requestRunner(protocol, reqType)
+	-- sending request
+	message = {messageType='runnerRequest', myPos = pos.getPosition(), requestType = reqType}
+	sync.broadcast(message,tostring(message),protocol)
+
+	-- collection responses
+	response = {}
+
+	parallel.waitForAny(function() sleep(3) end,
+		function()
+			done = false
+			while not done do
+
+				mes = sync.listen(protocol)
+				if mes.message.messageType == 'runnerReply' then
+					print('got runner response')
+					table.insert(response, mes)
+					done = true
+				end
+			end
+		end
+	)
+
+	-- picking a runner
+	runner = 1
+
+	for i = 1, #response do
+		a = response[runner].message.distance
+		b = response[i].message.distance
+		if b < a then
+			runner = i 
+		end
+	end
+
+	if #response == 0 then
+		print('no response')
+		sleep(1)
+		return nil
+	end
+
+	-- calling the runner
+	print('calling the runner')
+	sleep(.1)
+	callRunnerMes = { messageType = 'runnerComeHere', runnerId = response[runner].senderId, myPos = pos.getPosition(), requestType = reqType }
+	sync.broadcast(callRunnerMes,tostring(callRunnerMes),protocol)
+	return response[runner].senderId
+end
+
+

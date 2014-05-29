@@ -1,5 +1,6 @@
 
 local proto = nil
+runnerProto = nil
 local listenProtocol = 'quarry'
 local configDir = core.coreDir() .. '/modules/quarry/files/config'
 local config = configman.load(configDir)
@@ -7,6 +8,80 @@ if config == nil then
 	config = {unit = 'none', list=sync.create()}
 	configman.save(configDir,config)
 end
+
+
+
+local function empty(id)
+	print('emptying')
+for i = 1, 16 do
+	turtle.select(i)
+	turtle.dropUp()
+end
+	turtle.select(1)
+	print(id)
+	message = {messageType = 'doneEmptying'}
+	sync.send(id, message, tostring(message), runnerProto)
+end
+
+local function refuel(id)
+	print('refueling')
+	turtle.select(1)
+	turtle.drop()
+	turtle.suckUp()
+	turtle.refuel()
+	print(id)
+	message = {messageType = 'doneFueling'}
+	sync.send(id, message, tostring(message), runnerProto)
+end
+
+local handle = {}
+
+handle.full = function() 
+	
+	repeat
+		print('sending full request')
+		runner = tcom.requestRunner(runnerProto,'full')
+	until runner ~= nil
+
+	print('woot')
+
+	parallel.waitForAny(function() sleep(100) end, function()
+		done = false
+		while not done do
+			print('listen for begin em')
+			message = sync.listen(runnerProto)
+			print( 'gotsomething')
+			if message.message.messageType == 'beginEmptying' then
+				empty(runner)
+				done = true
+			end
+		end
+	end)
+
+	print('POOP')
+end
+
+handle.fuelPause = function() 
+	
+	repeat
+		print('seinding fuel request')
+		runner = tcom.requestRunner(proto,'fuel')
+	until runner ~= nil
+
+
+	parallel.waitForAny(function() sleep(100)end, function()
+		while true do
+			message = sync.listen(proto)
+			if message.message.messageType == 'beginFueling' then
+				empty(runner)
+			end
+		end
+	end)
+
+end
+
+pos.handle.full = handle.full 
+pos.handle.fuelPause = handle.fuel
 
 local function saveList()
 	configman.save(configDir,config)
@@ -42,8 +117,6 @@ local function startJob()
 	return false
 end
 
-
-
 local function miningLoop()
 	while startJob() do end
 end
@@ -57,7 +130,6 @@ local function syncLoop()
 			a = message.message.list
 
 			config.list = sync.sync(a,config.list)
-
 		end
 	end
 end
@@ -87,6 +159,7 @@ local function main()
 	if arg[1] == 'start' and arg[2] ~= nil then
 		print('starting '.. arg[2].. ' quarry')
 		proto= arg[2]
+		runnerProto = proto.."runner"
 		local startPos = pos.getPosition()
 		parallel.waitForAny(syncLoop, listenLoop, miningLoop)
 		nav.gotoPos(startPos, true)
@@ -94,6 +167,7 @@ local function main()
 	elseif arg[1] == 'join' and arg[2] ~= nil then
 		print('joining '.. arg[2])
 		proto= arg[2]
+		runnerProto = proto.."runner"
 		config.list = tcom.syncRequest(arg[2])
 		saveList()
 
@@ -107,3 +181,4 @@ local function main()
 end
 
 main()
+pos.resetHandlers()
