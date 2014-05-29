@@ -1,14 +1,31 @@
-
 local fuelSlot = 1
 local dumpSlot = 2
+local emptySlot = 3
 local waitTime = 1000
 -- if waitTime happens we must be done? go home
 
 local proto = nil
 local runnerProto = nil
+local runnerProtoDone = nil
 local listenProtocol = 'quarry'
 local startPos = pos.getPosition()
 local queue = {}
+
+local handle= {}
+handle.fuelPause = function() 
+	
+	turtle.digUp()
+	turtle.select(fuelSlot)
+	turtle.placeUp()
+	turtle.select(emptySlot)
+	turtle.drop()
+	turtle.suckUp()
+	turtle.refuel()
+	turtle.select(fuelSlot)
+	turtle.digUp()
+end
+
+pos.handle.fuelPause = handle.fuel
 
 local function calcDistance(otherPos)
 	c = pos.getPosition().coord - otherPos.coord
@@ -51,13 +68,7 @@ local function handleRequest(req)
 	reqPos.coord.y = reqPos.coord.y + 2
 	reqType = req.message.requestType
 
-	pos.handle.turtle = function(side, agressive)
-		nav.gotoY(reqPos.coord.y, agressive)
-
-	end
-
 	nav.gotoPos(reqPos, true)
-	pos.resetHandlers()
 
 	if reqType == "full" then
 		turtle.select(dumpSlot)
@@ -74,19 +85,19 @@ local function handleRequest(req)
 
 	end
 
-	parallel.waitForAny(function() sleep(100)end,function() 
+	parallel.waitForAny(function() 
 		done = false
-
 		while not done do
-    		response = sync.listen(runnerProto)
-
+			print('listening for response')
+    		response = sync.listen(runnerProtoDone)
+    		print('reponse '.. response.message.messageType)
 			if response.message.messageType == 'doneFueling' then
 				done = true
 			elseif response.message.messageType == 'doneEmptying' then
 				done = true
 			end
 		end
-	end)
+	end,function() sleep(100)end)
 
 	turtle.digDown()
 	nav.gotoY(startPosition.coord.y,true)
@@ -117,6 +128,7 @@ local function main()
 		print('joining '.. arg[2])
 		proto = arg[2]
 		runnerProto = proto.."runner"
+		runnerProtoDone = runnerProto ..'Done'
 		parallel.waitForAny(runnerLoop, listenLoop, handleLoop)
 	
 	end

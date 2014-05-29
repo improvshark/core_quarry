@@ -1,6 +1,7 @@
 
 local proto = nil
-runnerProto = nil
+local runnerProto = nil
+local runnerProtoDone = nil
 local listenProtocol = 'quarry'
 local configDir = core.coreDir() .. '/modules/quarry/files/config'
 local config = configman.load(configDir)
@@ -13,14 +14,12 @@ end
 
 local function empty(id)
 	print('emptying')
-for i = 1, 16 do
-	turtle.select(i)
-	turtle.dropUp()
-end
+	for i = 1, 16 do
+		turtle.select(i)
+		turtle.dropUp()
+	end
 	turtle.select(1)
-	print(id)
-	message = {messageType = 'doneEmptying'}
-	sync.send(id, message, tostring(message), runnerProto)
+	
 end
 
 local function refuel(id)
@@ -29,14 +28,10 @@ local function refuel(id)
 	turtle.drop()
 	turtle.suckUp()
 	turtle.refuel()
-	print(id)
-	message = {messageType = 'doneFueling'}
-	sync.send(id, message, tostring(message), runnerProto)
+	
 end
 
-local handle = {}
-
-handle.full = function() 
+fullHandler = function() 
 	
 	repeat
 		print('sending full request')
@@ -45,7 +40,7 @@ handle.full = function()
 
 	print('woot')
 
-	parallel.waitForAny(function() sleep(100) end, function()
+	parallel.waitForAny(function()
 		done = false
 		while not done do
 			print('listen for begin em')
@@ -54,43 +49,51 @@ handle.full = function()
 			if message.message.messageType == 'beginEmptying' then
 				empty(runner)
 				done = true
+				message = {messageType = 'doneEmptying'}
+				sync.send(tonumber(runner), message, tostring(message), runnerProtoDone)
 			end
 		end
 	end)
-
-	print('POOP')
 end
 
-handle.fuelPause = function() 
+fuelHandler = function() 
 	
 	repeat
-		print('seinding fuel request')
-		runner = tcom.requestRunner(proto,'fuel')
+		print('sending fuel request')
+		runner = tcom.requestRunner(runnerProto,'fuel')
 	until runner ~= nil
 
 
-	parallel.waitForAny(function() sleep(100)end, function()
-		while true do
-			message = sync.listen(proto)
+	parallel.waitForAny(function()
+		done = false
+		while not done do
+			print('listen for begin em')
+			message = sync.listen(runnerProto)
+			print( 'gotsomething')
 			if message.message.messageType == 'beginFueling' then
-				empty(runner)
+				refuel(runner)
+				done = true
+				message = {messageType = 'doneFueling'}
+				sync.send(tonumber(runner), message, tostring(message), runnerProtoDone)
 			end
 		end
 	end)
 
 end
 
-pos.handle.turtle = function(side, agressive)
-	pos.up(2,true)
-	nav.gotoY(reqPos.coord.y, agressive)
-end
-
-pos.handle.turtle = handle.turtle
-pos.handle.full = handle.full 
-pos.handle.fuelPause = handle.fuel
+pos.handle.full = fullHandler
+pos.handle.fuelPause = fuelHandler
 
 local function saveList()
 	configman.save(configDir,config)
+end
+
+local function enoughFuel(dim)
+	fuelLevel = turtle.getFuelLevel()
+	if fuelLevel >= (dim.x*dim.y*dim.z) + 400 then
+		return true
+	end
+	return false
 end
 
 local function startJob()
@@ -105,10 +108,21 @@ local function startJob()
 			tcom.syncB(config.list, proto)
 			
 			-- check fuel here
-			nav.gotoPos(jobList[i].value.startCoord, true)
+			if not enoughFuel(jobList[i].value.holeSize) then
+				fuelHandler()
+			end
+
+
+			
+			nav.gotoX(jobList[i].value.startCoord.coord.x,true)
+			nav.gotoZ(jobList[i].value.startCoord.coord.z,true)
+			nav.gotoY(jobList[i].value.startCoord.coord.y,true)
+			nav.turn(jobList[i].value.startCoord.direction)
 			currentPos = pos.getPosition()
+
 			shell.run('ex', jobList[i].value.holeSize.x,jobList[i].value.holeSize.y,jobList[i].value.holeSize.z)
 			-- check fuel here
+			currentPos.coord.y = currentPos.coord.y +1
 			nav.gotoPos(currentPos, true)
 			
 			value = jobList[i].value
@@ -167,6 +181,7 @@ local function main()
 		print('starting '.. arg[2].. ' quarry')
 		proto= arg[2]
 		runnerProto = proto.."runner"
+		runnerProtoDone = runnerProto ..'Done'
 		local startPos = pos.getPosition()
 		parallel.waitForAny(syncLoop, listenLoop, miningLoop)
 		nav.gotoPos(startPos, true)
@@ -175,7 +190,7 @@ local function main()
 		print('joining '.. arg[2])
 		proto= arg[2]
 		runnerProto = proto.."runner"
-
+		runnerProtoDone = runnerProto ..'Done'
 
 		parallel.waitForAny(function()
 
@@ -195,4 +210,3 @@ local function main()
 end
 
 main()
-pos.resetHandlers()
