@@ -68,8 +68,6 @@ function getAll(tabl)
 	return temp
 end
 
-
-
 local function copyObj(a,b)
 	b.name = a.name
 	b.value = a.value
@@ -227,7 +225,7 @@ function listen(protocol,timeout)
 
 	recievedAgain = false
 	print('b')
-	
+
 	rec = textutils.unserialize(message)
 	print('k')
 	rec.senderId = senderId

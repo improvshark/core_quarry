@@ -80,6 +80,12 @@ handle.fuelPause = function()
 
 end
 
+pos.handle.turtle = function(side, agressive)
+	pos.up(2,true)
+	nav.gotoY(reqPos.coord.y, agressive)
+end
+
+pos.handle.turtle = handle.turtle
 pos.handle.full = handle.full 
 pos.handle.fuelPause = handle.fuel
 
@@ -144,6 +150,7 @@ function listenLoop()
 				sleep(1)
 				print('broadcasting sync')
 				tcom.syncB(config.list, proto)
+				tcom.syncB(config.list, proto)
 			end
 		elseif message.messageType == 'list' then
 		elseif message.messageType == 'status' then
@@ -168,8 +175,15 @@ local function main()
 		print('joining '.. arg[2])
 		proto= arg[2]
 		runnerProto = proto.."runner"
+
+
+		parallel.waitForAny(function()
+
 		config.list = tcom.syncRequest(arg[2])
 		saveList()
+
+		end,syncLoop)
+		
 
 
 		local startPos = pos.getPosition()
