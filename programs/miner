@@ -10,8 +10,6 @@ if config == nil then
 	configman.save(configDir,config)
 end
 
-
-
 local function empty(id)
 	print('emptying')
 	for i = 1, 16 do
@@ -31,7 +29,7 @@ local function refuel(id)
 	
 end
 
-fullHandler = function() 
+local fullHandler = function() 
 	
 	repeat
 		print('sending full request')
@@ -56,7 +54,7 @@ fullHandler = function()
 	end)
 end
 
-fuelHandler = function() 
+local fuelHandler = function() 
 	
 	repeat
 		print('sending fuel request')
@@ -81,6 +79,24 @@ fuelHandler = function()
 
 end
 
+turtleHandler = function(side, agressive)
+		
+		if side == 'front' then  
+			pos.up(1,agressive)
+			pos.forward(2,agressive)
+			pos.down(1,agressive)
+		elseif side == 'top' then 
+			pos.forward(1,agressive)
+			pos.up(2,agressive)
+			pos.back(1,agressive)
+		elseif side == 'bottom' then 
+			pos.forward(1,agressive)
+			pos.down(2,agressive)
+			pos.back(1,agressive)
+		end
+end
+
+pos.handle.turtle = turtleHandler
 pos.handle.full = fullHandler
 pos.handle.fuelPause = fuelHandler
 
@@ -119,6 +135,10 @@ local function startJob()
 			nav.gotoY(jobList[i].value.startCoord.coord.y,true)
 			nav.turn(jobList[i].value.startCoord.direction)
 			currentPos = pos.getPosition()
+
+
+			pos.handle.full = fullHandler
+			pos.handle.fuelPause = fuelHandler
 
 			shell.run('ex', jobList[i].value.holeSize.x,jobList[i].value.holeSize.y,jobList[i].value.holeSize.z)
 			-- check fuel here
