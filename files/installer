@@ -36,8 +36,6 @@ end
 
 
 shell.run("module", 'install', 'turtleTools')
-shell.run("module", 'boot', 'turtleTools')
 
 
 shell.run("module", 'install', 'quarry')
-shell.run("module", 'boot', 'quarry')
