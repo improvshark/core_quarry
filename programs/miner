@@ -17,7 +17,7 @@ local function empty(id)
 		turtle.dropUp()
 	end
 	turtle.select(1)
-	
+
 end
 
 local function refuel(id)
@@ -26,11 +26,11 @@ local function refuel(id)
 	turtle.drop()
 	turtle.suckUp()
 	turtle.refuel()
-	
+
 end
 
-local fullHandler = function() 
-	
+local fullHandler = function()
+
 	repeat
 		print('sending full request')
 		runner = tcom.requestRunner(runnerProto,'full')
@@ -54,8 +54,8 @@ local fullHandler = function()
 	end)
 end
 
-local fuelHandler = function() 
-	
+local fuelHandler = function()
+
 	repeat
 		print('sending fuel request')
 		runner = tcom.requestRunner(runnerProto,'fuel')
@@ -80,16 +80,16 @@ local fuelHandler = function()
 end
 
 turtleHandler = function(side, agressive)
-		
-		if side == 'front' then  
+
+		if side == 'front' then
 			pos.up(1,agressive)
 			pos.forward(2,agressive)
 			pos.down(1,agressive)
-		elseif side == 'top' then 
+		elseif side == 'top' then
 			pos.forward(1,agressive)
 			pos.up(2,agressive)
 			pos.back(1,agressive)
-		elseif side == 'bottom' then 
+		elseif side == 'bottom' then
 			pos.forward(1,agressive)
 			pos.down(2,agressive)
 			pos.back(1,agressive)
@@ -116,20 +116,20 @@ local function startJob()
 	jobList = sync.getAll(config.list)
 	for i = 1, #jobList do
 		if jobList[i].value.status == 'notStarted' then
-			
+
 			value = jobList[i].value
 			value.status = 'started'
 			sync.set(config.list,jobList[i].name,value)
 			saveList()
 			tcom.syncB(config.list, proto)
-			
+
 			-- check fuel here
 			if not enoughFuel(jobList[i].value.holeSize) then
 				fuelHandler()
 			end
 
 
-			
+
 			nav.gotoX(jobList[i].value.startCoord.coord.x,true)
 			nav.gotoZ(jobList[i].value.startCoord.coord.z,true)
 			nav.gotoY(jobList[i].value.startCoord.coord.y,true)
@@ -144,13 +144,13 @@ local function startJob()
 			-- check fuel here
 			currentPos.coord.y = currentPos.coord.y +1
 			nav.gotoPos(currentPos, true)
-			
+
 			value = jobList[i].value
 			value.status = 'done'
 			sync.set(config.list,jobList[i].name,value)
 			saveList()
 			tcom.syncB(config.list, proto)
-			
+
 			return true
 		end
 	end
@@ -164,7 +164,7 @@ end
 local function syncLoop()
 	while true do
 		message = sync.listenB(proto)
-		
+
 		if message.message.messageType == 'sync' then
 			print('syncing ' .. tostring(message.message.list))
 			a = message.message.list
@@ -212,19 +212,13 @@ local function main()
 		runnerProto = proto.."runner"
 		runnerProtoDone = runnerProto ..'Done'
 
-		parallel.waitForAny(function()
-
 		config.list = tcom.syncRequest(arg[2])
 		saveList()
-
-		end,syncLoop)
-		
-
 
 		local startPos = pos.getPosition()
 		parallel.waitForAny(syncLoop, listenLoop, miningLoop)
 		nav.gotoPos(startPos, true)
-	
+
 	end
 
 end
