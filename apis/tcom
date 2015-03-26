@@ -3,14 +3,26 @@ local listenProtocol = 'quarry'
 
 function syncRequest(qName)
 	message = {messageType= 'syncRequest', quarryName = qName}
-	sync.broadcast(message,tostring(message), listenProtocol)
 
-	repeat 
-		received = sync.listen(qName)
-	until received.message.messageType == 'sync'
+	received = nil
 
-	return received.message.list
+	parallel.waitForAll(
+		function()
+			sync.broadcast(message,tostring(message), listenProtocol)
+		end,
+		function()
+			repeat
+				received = sync.listen(qName)
+				print('messagetype '.. received.message.messageType)
+			until received.message.messageType == 'sync'
 
+			print ('recieved a reply from sync request')
+			received = received.message.list
+
+		end
+	)
+
+	return received
 end
 
 function syncB(listArg, protocol)
@@ -47,7 +59,7 @@ function requestRunner(protocol, reqType)
 		a = response[runner].message.distance
 		b = response[i].message.distance
 		if b < a then
-			runner = i 
+			runner = i
 		end
 	end
 
@@ -64,5 +76,3 @@ function requestRunner(protocol, reqType)
 	sync.broadcast(callRunnerMes,tostring(callRunnerMes),protocol)
 	return response[runner].senderId
 end
-
-
