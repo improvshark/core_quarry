@@ -186,7 +186,7 @@ handle.turtleWrapper = function (side,agressive)
 	end
 end
 
-pos.ignore={"EnderStorage:enderChest","ComputerCraft:CC-Turtle"}
+pos.ignore={"EnderStorage:enderChest","ComputerCraft:CC-Turtle","ComputerCraft:CC-TurtleExpanded"}
 pos.handle.turtle = turtleHandler
 main()
 pos.resetHandlers()
