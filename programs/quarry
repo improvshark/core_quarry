@@ -161,7 +161,7 @@ end
 
 
 
-turtleHandler = function(side, agressive)
+local function turtleHandler(side, agressive)
 		sleep(1)
 		if side == 'front' then
 			pos.up(1,agressive)
@@ -178,6 +178,15 @@ turtleHandler = function(side, agressive)
 		end
 end
 
+handle.turtleWrapper = function (side,agressive)
+	count=1
+	while detectTurtle(side) do
+		turtleHandler(side, agressive, count)
+		count= count+1
+	end
+end
+
+pos.ignore={"EnderStorage:enderChest","ComputerCraft:CC-Turtle"}
 pos.handle.turtle = turtleHandler
 main()
 pos.resetHandlers()
