@@ -178,7 +178,7 @@ local function turtleHandler(side, agressive)
 		end
 end
 
-handle.turtleWrapper = function (side,agressive)
+turtleWrapper = function (side,agressive)
 	count=1
 	while detectTurtle(side) do
 		turtleHandler(side, agressive, count)
