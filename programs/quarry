@@ -1,4 +1,4 @@
- 
+
 
 local configDir = core.coreDir() .. '/modules/quarry/files/config'
 
@@ -10,7 +10,7 @@ if config == nil then
 end
 
 
-local function createJob(t, holeSizeArg,coordArg)  
+local function createJob(t, holeSizeArg,coordArg)
 	job =  {holeSize = holeSizeArg, startCoord = coordArg, status = 'notStarted', percent = 0 }
 	sync.set(t,tostring(job),job)
 end
@@ -20,15 +20,15 @@ local function generateCoords(holeSizeArg, startCoordArg, endCoordArg)
 	print('sc '.. startCoordArg.x..' '..startCoordArg.y.." "..startCoordArg.z)
 	print('ec '.. endCoordArg.x..' '..endCoordArg.y.." "..endCoordArg.z)
 
-	width = math.abs(startCoordArg.x - endCoordArg.x) + 1 
+	width = math.abs(startCoordArg.x - endCoordArg.x) + 1
 	depth = math.abs(startCoordArg.y - endCoordArg.y) + 1
 	length = math.abs(startCoordArg.z - endCoordArg.z) + 1
-		
+
 	for i = 0, math.ceil(length/holeSizeArg.z)-1  do
-		
+
 		for j = 0, math.ceil(width/holeSizeArg.x)-1 do
 
-			
+
 
 			if startCoordArg.x >= endCoordArg.x then
 				if startCoordArg.z >= endCoordArg.z then
@@ -112,7 +112,7 @@ local function main()
 
 
 
-	if arg[1] == 'start' and arg[2] ~= nil 
+	if arg[1] == 'start' and arg[2] ~= nil
 	 and tonumber(arg[3]) ~= nil and tonumber(arg[4]) ~= nil
 	 and tonumber(arg[5]) ~= nil and tonumber(arg[6]) ~= nil and tonumber(arg[7]) ~= nil
 	 and tonumber(arg[8]) ~= nil and tonumber(arg[9]) ~= nil and tonumber(arg[10]) ~= nil then
@@ -144,7 +144,7 @@ local function main()
 
 	elseif arg[1] == 'join' and arg[2] ~= nil then
 		join(arg[2])
-	elseif arg[1] == 'set' and arg[2] == 'miner' then 
+	elseif arg[1] == 'set' and arg[2] == 'miner' then
 		config.unit = 'miner'
 		configman.save(configDir,config)
 	elseif arg[1] == 'set' and arg[2] == 'runner' then
@@ -162,16 +162,16 @@ end
 
 
 turtleHandler = function(side, agressive)
-		
-		if side == 'front' then  
+		sleep(1)
+		if side == 'front' then
 			pos.up(1,agressive)
 			pos.forward(2,agressive)
 			pos.down(1,agressive)
-		elseif side == 'top' then 
+		elseif side == 'top' then
 			pos.forward(1,agressive)
 			pos.up(2,agressive)
 			pos.back(1,agressive)
-		elseif side == 'bottom' then 
+		elseif side == 'bottom' then
 			pos.forward(1,agressive)
 			pos.down(2,agressive)
 			pos.back(1,agressive)
