@@ -162,19 +162,25 @@ end
 
 
 local function turtleHandler(side, agressive)
-		sleep(1)
-		if side == 'front' then
-			pos.up(1,agressive)
-			pos.forward(2,agressive)
-			pos.down(1,agressive)
-		elseif side == 'top' then
-			pos.forward(1,agressive)
-			pos.up(2,agressive)
-			pos.back(1,agressive)
-		elseif side == 'bottom' then
-			pos.forward(1,agressive)
-			pos.down(2,agressive)
-			pos.back(1,agressive)
+
+		numb = math.random(1, 2)
+
+		if numb == 1 then
+			sleep(math.random(1, 5))
+		else
+			if side == 'front' then
+				pos.up(1,agressive)
+				pos.forward(2,agressive)
+				pos.down(1,agressive)
+			elseif side == 'top' then
+				pos.forward(1,agressive)
+				pos.up(2,agressive)
+				pos.back(1,agressive)
+			elseif side == 'bottom' then
+				pos.forward(1,agressive)
+				pos.down(2,agressive)
+				pos.back(1,agressive)
+			end
 		end
 end
 
