@@ -106,7 +106,9 @@ end
 
 local function enoughFuel(dim)
 	fuelLevel = turtle.getFuelLevel()
-	if fuelLevel >= (dim.x*dim.y*dim.z) + 400 then
+	if tonumber(fuelLevel) and fuelLevel >= (dim.x*dim.y*dim.z) + 400 then
+		return true
+	elseif not tonumber(fuelLevel) then
 		return true
 	end
 	return false
