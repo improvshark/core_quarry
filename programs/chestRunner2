@@ -1,0 +1,193 @@
+local fuelSlot = 1
+local dumpSlot = 2
+local emptySlot = 3
+local waitTime = 1000
+-- if waitTime happens we must be done? go home
+
+local proto = nil
+local runnerProto = nil
+local runnerProtoDone = nil
+local listenProtocol = 'quarry'
+local startPos = pos.getPosition()
+local queue = {}
+
+
+local function empty(id)
+	print('emptying')
+	for i = 1, 16 do
+		turtle.select(i)
+		turtle.dropUp()
+	end
+	turtle.select(1)
+
+end
+
+local function refuel(id)
+	print('refueling')
+	turtle.select(1)
+	turtle.drop()
+	turtle.suckUp()
+	turtle.refuel()
+
+end
+
+local fullHandler = function()
+
+	repeat
+		print('sending full request')
+		runner = tcom.requestRunner(runnerProto,'full')
+	until runner ~= nil
+
+	print('woot')
+
+	parallel.waitForAny(function()
+		done = false
+		while not done do
+			print('listen for begin em')
+			message = sync.listen(runnerProto)
+			print( 'gotsomething')
+			if message.message.messageType == 'beginEmptying' then
+				empty(runner)
+				done = true
+				message = {messageType = 'doneEmptying'}
+				sync.send(tonumber(runner), message, tostring(message), runnerProtoDone)
+			end
+		end
+	end)
+end
+
+local fuelHandler = function()
+
+	repeat
+		print('sending fuel request')
+		runner = tcom.requestRunner(runnerProto,'fuel')
+	until runner ~= nil
+
+
+	parallel.waitForAny(function()
+		done = false
+		while not done do
+			print('listen for begin em')
+			message = sync.listen(runnerProto)
+			print( 'gotsomething')
+			if message.message.messageType == 'beginFueling' then
+				refuel(runner)
+				done = true
+				message = {messageType = 'doneFueling'}
+				sync.send(tonumber(runner), message, tostring(message), runnerProtoDone)
+			end
+		end
+	end)
+
+end
+
+
+
+pos.handle.full = fullHandler
+pos.handle.fuelPause = fuelHandler
+
+print("setting handlers")
+table.insert(pos.ignore,"minecraft:chest")
+
+local function calcDistance(otherPos)
+	c = pos.getPosition().coord - otherPos.coord
+	d = c.x + c.y + c.z
+	d = d/3
+	return math.abs(d)
+end
+
+local function runnerLoop()
+	while true do
+		message = sync.listenB(runnerProto)
+
+		if message.message.messageType == 'runnerRequest' and message.message.requestType == "full" then
+			print('got a request from ' .. tostring(message.senderId))
+			reply = {messageType = 'runnerReply', distance = calcDistance(message.message.myPos), busy = #queue }
+			sync.broadcast(reply,tostring(reply),runnerProto)
+		elseif message.message.messageType == 'runnerComeHere' and message.message.runnerId == os.getComputerID() then
+			print('adding to queue')
+			table.insert(queue, message)
+		end
+	end
+end
+
+function listenLoop()
+	while true do
+		message = sync.listen(listenProtocol)
+
+		if message.message.messageType == 'syncRequest' then
+		elseif message.messageType == 'list' then
+		elseif message.messageType == 'status' then
+		end
+	end
+end
+
+local function handleRequest(req)
+	startPosition = pos.getPosition()
+
+	reqId = tonumber(req.senderId)
+	reqPos = req.message.myPos
+	reqPos.coord.y = reqPos.coord.y + 1
+	reqType = req.message.requestType
+
+	nav.gotoPos(reqPos, true)
+
+	if reqType == "full" then
+		message = {messageType = 'beginEmptying'}
+		sync.send(reqId, message, tostring(message), runnerProto)
+	end
+
+	parallel.waitForAny(function()
+		done = false
+		while not done do
+			print('listening for response')
+    		response = sync.listen(runnerProtoDone)
+    		print('reponse '.. response.message.messageType)
+			if response.message.messageType == 'doneEmptying' then
+				done = true
+			end
+		end
+	end,function() sleep(100)end)
+
+	nav.gotoY(startPosition.coord.y,true)
+	nav.gotoPos(startPosition,true)
+	-- drop all loot in chest
+	for i=1, 16 do
+		turtle.select(i)
+		turtle.dropDown()
+	end
+	print('finished with request')
+
+end
+
+local function handleLoop()
+	while true do
+		if #queue > 0 then
+			print('handling request')
+			handleRequest(queue[1])
+			table.remove(queue,1)
+		end
+		sleep(1)
+	end
+end
+
+
+
+local arg = {...}
+
+local function main()
+
+	if arg[1] == 'start' and arg[2] ~= nil then
+
+	elseif arg[1] == 'join' and arg[2] ~= nil then
+		print('joining '.. arg[2])
+		proto = arg[2]
+		runnerProto = proto.."runner"
+		runnerProtoDone = runnerProto ..'Done'
+		parallel.waitForAny(runnerLoop, listenLoop, handleLoop)
+
+	end
+
+end
+
+main()

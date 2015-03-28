@@ -1,0 +1,80 @@
+
+local proto = nil
+local runnerProto = nil
+local runnerProtoDone = nil
+local listenProtocol = 'quarry'
+
+local function refuel(id)
+	print('refueling')
+	turtle.select(1)
+	turtle.drop()
+	turtle.suckUp()
+	turtle.refuel()
+
+end
+
+local fuelHandler = function()
+
+	repeat
+		print('sending fuel request')
+		runner = tcom.requestRunner(runnerProto,'fuel')
+	until runner ~= nil
+
+
+	parallel.waitForAny(function()
+		done = false
+		while not done do
+			print('listen for begin em')
+			message = sync.listen(runnerProto)
+			print( 'gotsomething')
+			if message.message.messageType == 'beginFueling' then
+				refuel(runner)
+				done = true
+				message = {messageType = 'doneFueling'}
+				sync.send(tonumber(runner), message, tostring(message), runnerProtoDone)
+			end
+		end
+	end)
+
+end
+
+pos.handle.fuelPause = fuelHandler
+
+local arg = {...}
+
+
+local function main()
+
+	if arg[1] == 'start' and arg[2] ~= nil then
+
+	elseif arg[1] == 'join' and arg[2] ~= nil then
+		print('joining '.. arg[2])
+		proto = arg[2]
+		runnerProto = proto.."runner"
+		runnerProtoDone = runnerProto ..'Done'
+		parallel.waitForAny(runnerLoop, listenLoop, handleLoop)
+
+	end
+
+end
+
+local function main()
+
+	if arg[1] == 'start' and arg[2] ~= nil then
+
+	elseif arg[1] == 'join' and arg[2] ~= nil then
+		print('joining '.. arg[2])
+		proto= arg[2]
+		runnerProto = proto.."runner"
+		runnerProtoDone = runnerProto ..'Done'
+
+		while true do
+			pos.up()
+			pos.down()
+		end
+
+	end
+
+end
+
+main()

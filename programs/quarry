@@ -90,7 +90,7 @@ local function getCoord()
 end
 
 local function join(name)
-	if config.unit == 'miner' or config.unit == 'runner' then
+	if config.unit == 'miner' or config.unit == 'endRunner' or config.unit == 'fuelRunner' or config.unit == 'chestRunner' then
 		shell.run(config.unit,'join', name)
 	else
 		print('must set unit type')
@@ -98,7 +98,7 @@ local function join(name)
 end
 
 local function start(name)
-	if config.unit == 'miner' or config.unit == 'runner' then
+	if config.unit == 'miner' or config.unit == 'endRunner' or config.unit == 'fuelRunner' or config.unit == 'chestRunner' then
 		shell.run(config.unit,'start', name)
 	else
 		print('must set unit type')
@@ -150,6 +150,15 @@ local function main()
 	elseif arg[1] == 'set' and arg[2] == 'runner' then
 		config.unit = 'runner'
 		configman.save(configDir,config)
+	elseif arg[1] == 'set' and arg[2] == 'endRunner' then
+			config.unit = 'endRunner'
+			configman.save(configDir,config)
+	elseif arg[1] == 'set' and arg[2] == 'chestRunner' then
+			config.unit = 'chestRunner'
+			configman.save(configDir,config)
+	elseif arg[1] == 'set' and arg[2] == 'fuelRunner' then
+			config.unit = 'fuelRunner'
+		  configman.save(configDir,config)
 	elseif arg[1] == 'set' and arg[2] == 'none' then
 		config.unit = 'none'
 		configman.save(configDir,config)
@@ -158,11 +167,8 @@ local function main()
 	end
 end
 
-
-
-
 local function turtleHandler(side, agressive)
-
+	print('found an ignored or turtle block on: '.. side)
 		numb = math.random(1, 2)
 
 		if numb == 1 then
@@ -191,5 +197,6 @@ end
 
 pos.ignore={"EnderStorage:enderChest","ComputerCraft:CC-Turtle","ComputerCraft:CC-TurtleExpanded"}
 pos.handle.turtle = turtleHandler
+pos.handle.ignore = turtleHandler
 main()
 pos.resetHandlers()

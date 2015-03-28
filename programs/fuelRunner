@@ -1,0 +1,125 @@
+local fuelSlot = 1
+local dumpSlot = 2
+local emptySlot = 3
+local waitTime = 1000
+-- if waitTime happens we must be done? go home
+
+local proto = nil
+local runnerProto = nil
+local runnerProtoDone = nil
+local listenProtocol = 'quarry'
+local startPos = pos.getPosition()
+local queue = {}
+
+local handle= {}
+handle.fuelPause = function()
+
+	shell.run("refuel", 2)
+end
+
+
+table.insert(pos.ignore,"minecraft:chest")
+pos.handle.fuelPause = handle.fuelPause
+
+local function calcDistance(otherPos)
+	c = pos.getPosition().coord - otherPos.coord
+	d = c.x + c.y + c.z
+	d = d/3
+	return math.abs(d)
+end
+
+local function runnerLoop()
+	while true do
+		message = sync.listenB(runnerProto)
+
+		if message.message.messageType == 'runnerRequest' and message.message.requestType == "fuel" then
+			print('got a request from ' .. tostring(message.senderId))
+			reply = {messageType = 'runnerReply', distance = calcDistance(message.message.myPos), busy = #queue }
+			sync.broadcast(reply,tostring(reply),runnerProto)
+		elseif message.message.messageType == 'runnerComeHere' and message.message.runnerId == os.getComputerID() then
+			print('adding to queue')
+			table.insert(queue, message)
+		end
+	end
+end
+
+function listenLoop()
+	while true do
+		message = sync.listen(listenProtocol)
+
+		if message.message.messageType == 'syncRequest' then
+		elseif message.messageType == 'list' then
+		elseif message.messageType == 'status' then
+		end
+	end
+end
+
+local function handleRequest(req)
+	startPosition = pos.getPosition()
+
+	reqId = tonumber(req.senderId)
+	reqPos = req.message.myPos
+	reqPos.coord.y = reqPos.coord.y + 1
+	reqType = req.message.requestType
+
+	nav.gotoY(reqPos.coord.y,true)
+	nav.gotoPos(reqPos, true)
+
+	if reqType == 'fuel' then
+		message = {messageType = 'beginFueling'}
+		sync.send(reqId, message, tostring(message), runnerProto)
+	end
+
+	parallel.waitForAny(function()
+		done = false
+		while not done do
+			print('listening for response')
+    		response = sync.listen(runnerProtoDone)
+    		print('reponse '.. response.message.messageType)
+			if response.message.messageType == 'doneFueling' then
+				done = true
+			elseif response.message.messageType == 'doneEmptying' then
+				done = true
+			end
+		end
+	end,function() sleep(100)end)
+
+	nav.gotoY(startPosition.coord.y,true)
+	nav.gotoPos(startPosition,true)
+	turtle.suckDown()
+	turtle.suckDown()
+	print('finished with request')
+
+end
+
+local function handleLoop()
+	while true do
+		if #queue > 0 then
+			print('handling request')
+			handleRequest(queue[1])
+			table.remove(queue,1)
+		end
+		sleep(1)
+	end
+end
+
+
+
+local arg = {...}
+
+local function main()
+
+	if arg[1] == 'start' and arg[2] ~= nil then
+
+	elseif arg[1] == 'join' and arg[2] ~= nil then
+		print('joining '.. arg[2])
+		proto = arg[2]
+		runnerProto = proto.."runner"
+		runnerProtoDone = runnerProto ..'Done'
+		parallel.waitForAny(runnerLoop, listenLoop, handleLoop)
+
+	end
+
+end
+
+main()
