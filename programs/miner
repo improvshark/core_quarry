@@ -180,13 +180,12 @@ function listenLoop()
 	while true do
 		message = sync.listen(listenProtocol)
 
-		if message.message.messageType == 'syncRequest' then
-			print('got a syncRequest')
+		if message.message.messageType == 'joinRequest' then
+			print('got a joinRequest')
 			if message.message.quarryName == proto then
 				sleep(1)
-				print('broadcasting sync')
-				tcom.syncB(config.list, proto)
-				tcom.syncB(config.list, proto)
+				print('broadcasting join reply')
+				tcom.joinReplyB(config.list, proto)
 			end
 		elseif message.messageType == 'list' then
 		elseif message.messageType == 'status' then

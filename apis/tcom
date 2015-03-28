@@ -2,7 +2,7 @@ local listenProtocol = 'quarry'
 
 
 function syncRequest(qName)
-	message = {messageType= 'syncRequest', quarryName = qName}
+	message = {messageType= 'joinRequest', quarryName = qName}
 
 	received = nil
 
@@ -14,7 +14,7 @@ function syncRequest(qName)
 			repeat
 				received = sync.listen(qName)
 				print('messagetype '.. received.message.messageType)
-			until received.message.messageType == 'sync'
+			until received.message.messageType == 'joinReply'
 
 			print ('recieved a reply from sync request')
 			received = received.message.list
@@ -23,6 +23,11 @@ function syncRequest(qName)
 	)
 
 	return received
+end
+
+function joinReplyB(listArg, protocol)
+	message = {list = listArg, messageType= 'joinReply'}
+	sync.broadcast(message,tostring(message), protocol)
 end
 
 function syncB(listArg, protocol)
