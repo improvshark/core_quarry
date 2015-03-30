@@ -9,7 +9,6 @@ local function setProtos(nameOfQuarry)
 	protocol.doneChest = nameOfQuarry .. "_doneChest"
 end
 
-local proto_sync = nil
 local configDir = core.coreDir() .. '/modules/quarry/files/config'
 local config = configman.load(configDir)
 if config == nil then
@@ -108,9 +107,11 @@ end
 local function startJob()
 	jobList = sync.getAll(config.list)
 	for i = 1, #jobList do
-		if jobList[i].value.status == 'notStarted' then
+		if jobList[i].value.status == 'started' and jobList[i].value.id ==  os.getComputerID() or jobList[i].value.status == 'notStarted' then
 
 			value = jobList[i].value
+			value.id = os.getComputerID()
+			value.turtle = os.getComputerLabel()
 			value.status = 'started'
 			sync.set(config.list,jobList[i].name,value)
 			saveList()
@@ -136,7 +137,7 @@ local function startJob()
 			shell.run('ex', jobList[i].value.holeSize.x,jobList[i].value.holeSize.y,jobList[i].value.holeSize.z)
 			-- check fuel here
 			currentPos.coord.y = currentPos.coord.y +1
-			nav.gotoPos(currentPos, true)
+			nav.gotoY(currentPos.coord.y, true)
 
 			value = jobList[i].value
 			value.status = 'done'
@@ -163,6 +164,7 @@ local function syncLoop()
 			a = message.message.list
 
 			config.list = sync.sync(a,config.list)
+			saveList()
 		end
 	end
 end
@@ -185,6 +187,15 @@ function listenLoop()
 end
 
 
+local function begin()
+	config.startPos = pos.getPosition()
+	configman.save(configDir,config)
+	core.addBoot("quarry join "..protocol.quarryName .. " resume")
+	parallel.waitForAny(syncLoop, listenLoop, miningLoop)
+	nav.gotoPos(config.startPos, true)
+	core.removeBoot("quarry join "..protocol.quarryName .. " resume")
+end
+
 local arg = {...}
 
 local function main()
@@ -192,20 +203,26 @@ local function main()
 	if arg[1] == 'start' and arg[2] ~= nil then
 		print('starting '.. arg[2].. ' quarry')
 		setProtos(arg[2])
-		local startPos = pos.getPosition()
-		parallel.waitForAny(syncLoop, listenLoop, miningLoop)
-		nav.gotoPos(startPos, true)
 
-	elseif arg[1] == 'join' and arg[2] ~= nil then
-		print('joining '.. arg[2])
+		begin()
+
+	elseif arg[1] == 'join' and arg[2] ~= nil and arg[3] == "resume" then
+		print('resuming '.. arg[2])
 		setProtos(arg[2])
 
-		config.list = tcom.syncRequest(arg[2])
-		saveList()
-
-		local startPos = pos.getPosition()
 		parallel.waitForAny(syncLoop, listenLoop, miningLoop)
-		nav.gotoPos(startPos, true)
+		nav.gotoPos(config.startPos, true)
+		core.removeBoot("quarry join "..protocol.quarryName .. " resume")
+		fs.rm(configDir)
+	elseif arg[1] == 'join' and arg[2] ~= nil then
+			print('joining '.. arg[2])
+			setProtos(arg[2])
+
+			config.list = tcom.syncRequest(arg[2])
+			saveList()
+
+			begin()
+
 
 	end
 

@@ -1,6 +1,6 @@
 
 fadeDays = 0
-fadeTime = .1
+fadeTime = .5
 
 channel = 1337
 

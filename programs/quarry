@@ -89,9 +89,17 @@ local function getCoord()
 	return coord
 end
 
-local function join(name)
+local function clearConfig()
+	config.queue = nil
+	config.startPos = nil
+	config.list = sync.create()
+	configman.save(configDir,config)
+end
+
+local function join(name, resume)
 	if config.unit == 'miner' or config.unit == 'endRunner' or config.unit == 'fuelRunner' or config.unit == 'chestRunner' then
-		shell.run(config.unit,'join', name)
+		shell.run(config.unit,'join', name, resume)
+		clearConfig()
 	else
 		print('must set unit type')
 	end
@@ -100,6 +108,7 @@ end
 local function start(name)
 	if config.unit == 'miner' or config.unit == 'endRunner' or config.unit == 'fuelRunner' or config.unit == 'chestRunner' then
 		shell.run(config.unit,'start', name)
+		clearConfig()
 	else
 		print('must set unit type')
 	end
@@ -141,9 +150,11 @@ local function main()
 	elseif arg[1] == 'pause' and arg[2] ~= nil then
 	elseif arg[1] == 'status' and arg[2] ~= nil then
 	elseif arg[1] == 'add' and arg[2] ~= nil then
-
+	elseif arg[1] == 'clear' and arg[2] ~= nil then
+		clearConfig()
+		core.removeBoot("quarry join "..arg[2] .. " resume")
 	elseif arg[1] == 'join' and arg[2] ~= nil then
-		join(arg[2])
+		join(arg[2], arg[3])
 	elseif arg[1] == 'set' and arg[2] == 'miner' then
 		config.unit = 'miner'
 		configman.save(configDir,config)

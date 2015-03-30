@@ -1,5 +1,12 @@
 local protocol = {universal="quarry",quarryName=nil,sync=nil,requestFuel=nil,doneFuel=nil,requestChest=nil,doneChest=nil}
 
+local configDir = core.coreDir() .. '/modules/quarry/files/config'
+local config = configman.load(configDir)
+if config == nil then
+	config = {unit = 'none', list=sync.create()}
+	configman.save(configDir,config)
+end
+
 local function setProtos(nameOfQuarry)
 	protocol.quarryName = nameOfQuarry
 	protocol.sync = nameOfQuarry .. "_sync"
@@ -9,7 +16,7 @@ local function setProtos(nameOfQuarry)
 	protocol.doneChest = nameOfQuarry .. "_doneChest"
 end
 
-local startPos = pos.getPosition()
+local startPos = nil
 local queue = {}
 
 local handle= {}
@@ -114,11 +121,26 @@ local arg = {...}
 local function main()
 
 	if arg[1] == 'start' and arg[2] ~= nil then
+	elseif arg[1] == 'join' and arg[2] ~= nil and arg[3] == "resume" then
+		print('resuming '.. arg[2])
+		setProtos(arg[2])
+
+		if config.startPos ~= nil then startPos = config.startPos end
+
+		parallel.waitForAny(fuelRunnerLoop, listenLoop, handleLoop)
+		core.removeBoot("quarry join "..protocol.quarryName .. " resume")
 
 	elseif arg[1] == 'join' and arg[2] ~= nil then
 		print('joining '.. arg[2])
 		setProtos(arg[2])
+
+		startPos = pos.getPosition()
+		config.startPos = startPos
+		configman.save(configDir,config)
+
+		core.addBoot("quarry join "..protocol.quarryName .. " resume")
 		parallel.waitForAny(fuelRunnerLoop, listenLoop, handleLoop)
+		core.removeBoot("quarry join "..protocol.quarryName .. " resume")
 
 	end
 
