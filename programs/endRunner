@@ -36,6 +36,7 @@ handle.fuelPause = function()
 end
 
 pos.handle.fuelPause = handle.fuel
+table.insert(pos.ignore,"minecraft:chest")
 
 local function calcDistance(otherPos)
 	c = pos.getPosition().coord - otherPos.coord
