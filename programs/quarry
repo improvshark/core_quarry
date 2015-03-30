@@ -169,20 +169,17 @@ end
 
 local function turtleHandler(side, agressive)
 	print('found an ignored or turtle block on: '.. side)
-		numb = math.random(1, 2)
+		numb = 2
 
 		if numb == 1 then
 			sleep(math.random(2, 5))
 		else
 			if side == 'front' then
-				if math.random(1, 2) == 1 then pos.up(1,agressive) pos.forward(2,agressive) pos.down(1,agressive)
- 				else pos.down(1,agressive) pos.forward(2,agressive) pos.down(1,agressive) end
+				if math.random(1, 2) == 1 then pos.up(1,agressive) else pos.down(1,agressive) end
 			elseif side == 'top' then
-				if math.random(1, 2) == 1 then pos.forward(1,agressive) pos.up(2,agressive) pos.back(1,agressive)
-				else pos.back(1,agressive) pos.up(2,agressive) pos.forward(1,agressive) end
+				if math.random(1, 2) == 1 then pos.forward(1,agressive) else pos.back(1,agressive) end
 			elseif side == 'bottom' then
-				if math.random(1, 2) == 1 then pos.forward(1,agressive) pos.down(2,agressive) pos.back(1,agressive)
-				else pos.back(1,agressive) pos.down(2,agressive) pos.forward(1,agressive) end
+				if math.random(1, 2) == 1 then pos.forward(1,agressive) 	else pos.back(1,agressive) end
 			end
 		end
 end
@@ -195,7 +192,7 @@ turtleWrapper = function (side,agressive)
 	end
 end
 
-pos.ignore={"EnderStorage:enderChest","ComputerCraft:CC-Turtle","ComputerCraft:CC-TurtleExpanded"}
+pos.ignore={"ComputerCraft:CC-Peripheral", "EnderStorage:enderChest","ComputerCraft:CC-Turtle","ComputerCraft:CC-TurtleExpanded"}
 pos.handle.turtle = turtleHandler
 pos.handle.ignore = turtleHandler
 main()

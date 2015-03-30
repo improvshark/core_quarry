@@ -48,7 +48,7 @@ function requestRunner(protocol, reqType)
 		function()
 			while true do
 
-				mes = sync.listen(protocol)
+				mes = sync.listenB(protocol)
 				if mes.message.messageType == 'runnerReply' then
 					print('got runner response')
 					table.insert(response, mes)

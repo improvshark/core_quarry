@@ -1,13 +1,14 @@
-local fuelSlot = 1
-local dumpSlot = 2
-local emptySlot = 3
-local waitTime = 1000
--- if waitTime happens we must be done? go home
+local protocol = {universal="quarry",quarryName=nil,sync=nil,requestFuel=nil,doneFuel=nil,requestChest=nil,doneChest=nil}
 
-local proto = nil
-local runnerProto = nil
-local runnerProtoDone = nil
-local listenProtocol = 'quarry'
+local function setProtos(nameOfQuarry)
+	protocol.quarryName = nameOfQuarry
+	protocol.sync = nameOfQuarry .. "_sync"
+	protocol.requestFuel = nameOfQuarry .. "_requestFuel"
+	protocol.doneFuel = nameOfQuarry .. "_doneFuel"
+	protocol.requestChest = nameOfQuarry .. "_requestChest"
+	protocol.doneChest = nameOfQuarry .. "_doneChest"
+end
+
 local startPos = pos.getPosition()
 local queue = {}
 
@@ -20,6 +21,7 @@ end
 
 table.insert(pos.ignore,"minecraft:chest")
 pos.handle.fuelPause = handle.fuelPause
+--pos.handle.ignore = function(side) print("tots got an ignore block ".. side) end
 
 local function calcDistance(otherPos)
 	c = pos.getPosition().coord - otherPos.coord
@@ -28,14 +30,14 @@ local function calcDistance(otherPos)
 	return math.abs(d)
 end
 
-local function runnerLoop()
+local function fuelRunnerLoop()
 	while true do
-		message = sync.listenB(runnerProto)
+		message = sync.listenB(protocol.requestFuel)
 
 		if message.message.messageType == 'runnerRequest' and message.message.requestType == "fuel" then
 			print('got a request from ' .. tostring(message.senderId))
 			reply = {messageType = 'runnerReply', distance = calcDistance(message.message.myPos), busy = #queue }
-			sync.broadcast(reply,tostring(reply),runnerProto)
+			sync.broadcast(reply,tostring(reply),protocol.requestFuel)
 		elseif message.message.messageType == 'runnerComeHere' and message.message.runnerId == os.getComputerID() then
 			print('adding to queue')
 			table.insert(queue, message)
@@ -45,7 +47,7 @@ end
 
 function listenLoop()
 	while true do
-		message = sync.listen(listenProtocol)
+		message = sync.listen(protocol.universal)
 
 		if message.message.messageType == 'syncRequest' then
 		elseif message.messageType == 'list' then
@@ -64,17 +66,18 @@ local function handleRequest(req)
 
 	nav.gotoY(reqPos.coord.y,true)
 	nav.gotoPos(reqPos, true)
+	--nav.gotoPosRand(reqPos, true)
 
 	if reqType == 'fuel' then
 		message = {messageType = 'beginFueling'}
-		sync.send(reqId, message, tostring(message), runnerProto)
+		sync.send(reqId, message, tostring(message), protocol.requestFuel)
 	end
 
 	parallel.waitForAny(function()
 		done = false
 		while not done do
 			print('listening for response')
-    		response = sync.listen(runnerProtoDone)
+    		response = sync.listen(protocol.doneFuel)
     		print('reponse '.. response.message.messageType)
 			if response.message.messageType == 'doneFueling' then
 				done = true
@@ -86,6 +89,7 @@ local function handleRequest(req)
 
 	nav.gotoY(startPosition.coord.y,true)
 	nav.gotoPos(startPosition,true)
+	--nav.gotoPosRand(startPosition,true)
 	turtle.suckDown()
 	turtle.suckDown()
 	print('finished with request')
@@ -113,10 +117,8 @@ local function main()
 
 	elseif arg[1] == 'join' and arg[2] ~= nil then
 		print('joining '.. arg[2])
-		proto = arg[2]
-		runnerProto = proto.."runner"
-		runnerProtoDone = runnerProto ..'Done'
-		parallel.waitForAny(runnerLoop, listenLoop, handleLoop)
+		setProtos(arg[2])
+		parallel.waitForAny(fuelRunnerLoop, listenLoop, handleLoop)
 
 	end
 

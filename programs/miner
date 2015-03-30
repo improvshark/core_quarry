@@ -1,8 +1,15 @@
+local protocol = {universal="quarry",quarryName=nil,sync=nil,requestFuel=nil,doneFuel=nil,requestChest=nil,doneChest=nil}
 
-local proto = nil
-local runnerProto = nil
-local runnerProtoDone = nil
-local listenProtocol = 'quarry'
+local function setProtos(nameOfQuarry)
+	protocol.quarryName = nameOfQuarry
+	protocol.sync = nameOfQuarry .. "_sync"
+	protocol.requestFuel = nameOfQuarry .. "_requestFuel"
+	protocol.doneFuel = nameOfQuarry .. "_doneFuel"
+	protocol.requestChest = nameOfQuarry .. "_requestChest"
+	protocol.doneChest = nameOfQuarry .. "_doneChest"
+end
+
+local proto_sync = nil
 local configDir = core.coreDir() .. '/modules/quarry/files/config'
 local config = configman.load(configDir)
 if config == nil then
@@ -33,7 +40,7 @@ local fullHandler = function()
 
 	repeat
 		print('sending full request')
-		runner = tcom.requestRunner(runnerProto,'full')
+		runner = tcom.requestRunner(protocol.requestChest,'full')
 	until runner ~= nil
 
 	print('woot')
@@ -42,13 +49,13 @@ local fullHandler = function()
 		done = false
 		while not done do
 			print('listen for begin em')
-			message = sync.listen(runnerProto)
+			message = sync.listen(protocol.requestChest)
 			print( 'gotsomething')
 			if message.message.messageType == 'beginEmptying' then
 				empty(runner)
 				done = true
 				message = {messageType = 'doneEmptying'}
-				sync.send(tonumber(runner), message, tostring(message), runnerProtoDone)
+				sync.send(tonumber(runner), message, tostring(message), protocol.doneChest)
 			end
 		end
 	end)
@@ -58,7 +65,7 @@ local fuelHandler = function()
 
 	repeat
 		print('sending fuel request')
-		runner = tcom.requestRunner(runnerProto,'fuel')
+		runner = tcom.requestRunner(protocol.requestFuel,'fuel')
 	until runner ~= nil
 
 
@@ -66,13 +73,13 @@ local fuelHandler = function()
 		done = false
 		while not done do
 			print('listen for begin em')
-			message = sync.listen(runnerProto)
+			message = sync.listen(protocol.requestFuel)
 			print( 'gotsomething')
 			if message.message.messageType == 'beginFueling' then
 				refuel(runner)
 				done = true
 				message = {messageType = 'doneFueling'}
-				sync.send(tonumber(runner), message, tostring(message), runnerProtoDone)
+				sync.send(tonumber(runner), message, tostring(message), protocol.doneFuel)
 			end
 		end
 	end)
@@ -107,7 +114,7 @@ local function startJob()
 			value.status = 'started'
 			sync.set(config.list,jobList[i].name,value)
 			saveList()
-			tcom.syncB(config.list, proto)
+			tcom.syncB(config.list, protocol.sync)
 
 			-- check fuel here
 			if not enoughFuel(jobList[i].value.holeSize) then
@@ -135,7 +142,7 @@ local function startJob()
 			value.status = 'done'
 			sync.set(config.list,jobList[i].name,value)
 			saveList()
-			tcom.syncB(config.list, proto)
+			tcom.syncB(config.list, protocol.sync)
 
 			return true
 		end
@@ -149,7 +156,7 @@ end
 
 local function syncLoop()
 	while true do
-		message = sync.listenB(proto)
+		message = sync.listenB(protocol.sync)
 
 		if message.message.messageType == 'sync' then
 			print('syncing ' .. tostring(message.message.list))
@@ -162,14 +169,14 @@ end
 
 function listenLoop()
 	while true do
-		message = sync.listen(listenProtocol)
+		message = sync.listen(protocol.universal)
 
 		if message.message.messageType == 'joinRequest' then
 			print('got a joinRequest')
-			if message.message.quarryName == proto then
+			if message.message.quarryName == protocol.quarryName then
 				sleep(1)
 				print('broadcasting join reply')
-				tcom.joinReplyB(config.list, proto)
+				tcom.joinReplyB(config.list, protocol.quarryName)
 			end
 		elseif message.messageType == 'list' then
 		elseif message.messageType == 'status' then
@@ -184,18 +191,14 @@ local function main()
 
 	if arg[1] == 'start' and arg[2] ~= nil then
 		print('starting '.. arg[2].. ' quarry')
-		proto= arg[2]
-		runnerProto = proto.."runner"
-		runnerProtoDone = runnerProto ..'Done'
+		setProtos(arg[2])
 		local startPos = pos.getPosition()
 		parallel.waitForAny(syncLoop, listenLoop, miningLoop)
 		nav.gotoPos(startPos, true)
 
 	elseif arg[1] == 'join' and arg[2] ~= nil then
 		print('joining '.. arg[2])
-		proto= arg[2]
-		runnerProto = proto.."runner"
-		runnerProtoDone = runnerProto ..'Done'
+		setProtos(arg[2])
 
 		config.list = tcom.syncRequest(arg[2])
 		saveList()
