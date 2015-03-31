@@ -203,7 +203,7 @@ turtleWrapper = function (side,agressive)
 	end
 end
 
-pos.ignore={"ComputerCraft:CC-Peripheral", "EnderStorage:enderChest","ComputerCraft:CC-Turtle","ComputerCraft:CC-TurtleExpanded"}
+pos.ignore={"ComputerCraft:CC-Peripheral", "EnderStorage:enderChest","ComputerCraft:CC-Turtle","ComputerCraft:CC-TurtleExpanded", "minecraft:bedrock"}
 pos.handle.turtle = turtleHandler
 pos.handle.ignore = turtleHandler
 main()
