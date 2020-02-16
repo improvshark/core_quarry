@@ -4,10 +4,10 @@ local emptySlot = 3
 local waitTime = 1000
 -- if waitTime happens we must be done? go home
 local configDir = core.coreDir() .. '/modules/quarry/files/config'
-local config = configman.load(configDir)
+local config = core.loadConfig(configDir)
 if config == nil then
 	config = {unit = 'none', list=sync.create()}
-	configman.save(configDir,config)
+	core.saveConfig(configDir,config)
 end
 
 local protocol = {universal="quarry",quarryName=nil,sync=nil,requestFuel=nil,doneFuel=nil,requestChest=nil,doneChest=nil}

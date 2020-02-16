@@ -8,7 +8,7 @@ channel = 1337
 local function save(var)
 	local configDir = core.coreDir() .. '/modules/quarry/files/log'
 	config = {log = var}
-	configman.save(configDir,config)
+	core.saveConfig(configDir,config)
 end
 
 local function copy (t) -- shallow-copy a table

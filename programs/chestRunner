@@ -3,10 +3,10 @@ local startPos = nil
 local queue = {}
 
 local configDir = core.coreDir() .. '/modules/quarry/files/config'
-local config = configman.load(configDir)
+local config = core.loadConfig(configDir)
 if config == nil then
 	config = {unit = 'none', list=sync.create()}
-	configman.save(configDir,config)
+	core.saveConfig(configDir,config)
 end
 
 
@@ -156,7 +156,7 @@ local function main()
 
 			startPos = pos.getPosition()
 			config.startPos = startPos
-			configman.save(configDir,config)
+			core.saveConfig(configDir,config)
 			print('joining '.. arg[2])
 			setProtos(arg[2])
 

@@ -10,10 +10,10 @@ local function setProtos(nameOfQuarry)
 end
 
 local configDir = core.coreDir() .. '/modules/quarry/files/config'
-local config = configman.load(configDir)
+local config = core.loadConfig(configDir)
 if config == nil then
 	config = {unit = 'none', list=sync.create()}
-	configman.save(configDir,config)
+	core.saveConfig(configDir,config)
 end
 
 local function empty(id)
@@ -91,7 +91,7 @@ pos.handle.full = fullHandler
 pos.handle.fuelPause = fuelHandler
 
 local function saveList()
-	configman.save(configDir,config)
+	core.saveConfig(configDir,config)
 end
 
 local function enoughFuel(dim)
@@ -189,7 +189,7 @@ end
 
 local function begin()
 	config.startPos = pos.getPosition()
-	configman.save(configDir,config)
+	core.saveConfig(configDir,config)
 	core.addBoot("quarry join "..protocol.quarryName .. " resume")
 	parallel.waitForAny(syncLoop, listenLoop, miningLoop)
 	nav.gotoPos(config.startPos, true)

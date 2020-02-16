@@ -3,10 +3,10 @@
 local configDir = core.coreDir() .. '/modules/quarry/files/config'
 
 
-local config = configman.load(configDir)
+local config = core.loadConfig(configDir)
 if config == nil then
 	config = {unit = 'none', list={}}
-	configman.save(configDir,config)
+	core.saveConfig(configDir,config)
 end
 
 
@@ -93,7 +93,7 @@ local function clearConfig()
 	config.queue = nil
 	config.startPos = nil
 	config.list = sync.create()
-	configman.save(configDir,config)
+	core.saveConfig(configDir,config)
 end
 
 local function join(name, resume)
@@ -130,7 +130,7 @@ local function main()
 	 	startCoord = vector.new(tonumber(arg[5]),tonumber(arg[6]),tonumber(arg[7]))
 	 	endCoord = vector.new(tonumber(arg[8]),tonumber(arg[9]),tonumber(arg[10]))
 		config.list = generateCoords(holeSize,startCoord,endCoord)
-		configman.save(configDir,config)
+		core.saveConfig(configDir,config)
 		start(arg[2])
 
 
@@ -143,7 +143,7 @@ local function main()
 		endCoord = getCoord()
 
 		list = generateCoords(holeSize,startCoord,endCoord)
-		configman.save(configDir,config)
+		core.saveConfig(configDir,config)
 		join(arg[2])
 
 	elseif arg[1] == 'stop' and arg[2] ~= nil then
@@ -157,22 +157,22 @@ local function main()
 		join(arg[2], arg[3])
 	elseif arg[1] == 'set' and arg[2] == 'miner' then
 		config.unit = 'miner'
-		configman.save(configDir,config)
+		core.saveConfig(configDir,config)
 	elseif arg[1] == 'set' and arg[2] == 'runner' then
 		config.unit = 'runner'
-		configman.save(configDir,config)
+		core.saveConfig(configDir,config)
 	elseif arg[1] == 'set' and arg[2] == 'endRunner' then
 			config.unit = 'endRunner'
-			configman.save(configDir,config)
+			core.saveConfig(configDir,config)
 	elseif arg[1] == 'set' and arg[2] == 'chestRunner' then
 			config.unit = 'chestRunner'
-			configman.save(configDir,config)
+			core.saveConfig(configDir,config)
 	elseif arg[1] == 'set' and arg[2] == 'fuelRunner' then
 			config.unit = 'fuelRunner'
-		  configman.save(configDir,config)
+		  core.saveConfig(configDir,config)
 	elseif arg[1] == 'set' and arg[2] == 'none' then
 		config.unit = 'none'
-		configman.save(configDir,config)
+		core.saveConfig(configDir,config)
 	else
 		print('unknown command')
 	end
