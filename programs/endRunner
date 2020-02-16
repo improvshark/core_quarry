@@ -3,7 +3,7 @@ local dumpSlot = 2
 local emptySlot = 3
 local waitTime = 1000
 -- if waitTime happens we must be done? go home
-local configDir = core.coreDir() .. '/modules/quarry/files/config'
+local configDir = core.coreDir() .. '/usr/quarry/files/config'
 local config = core.loadConfig(configDir)
 if config == nil then
 	config = {unit = 'none', list=sync.create()}

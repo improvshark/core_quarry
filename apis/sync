@@ -6,7 +6,7 @@ channel = 1337
 
 
 local function save(var)
-	local configDir = core.coreDir() .. '/modules/quarry/files/log'
+	local configDir = core.coreDir() .. '/usr/quarry/files/log'
 	config = {log = var}
 	core.saveConfig(configDir,config)
 end

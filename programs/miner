@@ -9,7 +9,7 @@ local function setProtos(nameOfQuarry)
 	protocol.doneChest = nameOfQuarry .. "_doneChest"
 end
 
-local configDir = core.coreDir() .. '/modules/quarry/files/config'
+local configDir = core.coreDir() .. '/usr/quarry/files/config'
 local config = core.loadConfig(configDir)
 if config == nil then
 	config = {unit = 'none', list=sync.create()}

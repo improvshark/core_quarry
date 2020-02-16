@@ -1,6 +1,6 @@
 
 
-local configDir = core.coreDir() .. '/modules/quarry/files/config'
+local configDir = core.coreDir() .. '/usr/quarry/files/config'
 
 
 local config = core.loadConfig(configDir)

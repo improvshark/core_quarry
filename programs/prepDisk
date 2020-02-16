@@ -12,5 +12,5 @@ end
 if fs.exists("/disk/startup") then
 	fs.delete("/disk/startup")
 end
-shell.run('cp', core.coreDir() .. '/modules/quarry/files/installer', '/disk/startup')
+shell.run('cp', core.coreDir() .. '/usr/quarry/files/installer', '/disk/startup')
 
